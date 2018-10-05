@@ -49,7 +49,7 @@ public class TimeController {
 		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
-		
+
 		return time;
 	}
 
@@ -62,10 +62,20 @@ public class TimeController {
 		return tim;
 	}
 
-	@RequestMapping(value = { "/time" }, method = RequestMethod.PUT, produces = { MediaType.APPLICATION_JSON_VALUE,
+	@RequestMapping(value = { "/time/{timeId}" }, method = RequestMethod.PUT, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public TimeDTO updateTime(@RequestBody TimeDTO tim) {
+	public TimeDTO updateTime(@RequestBody TimeDTO tim,@PathVariable("timeId")String timeId) {
+		UUID id = null;
+		try {
+			id = UUID.fromString(timeId);
+		}
+		catch (IllegalArgumentException e) {
+			throw new NotFoundDataException("Time id");
+		}
+		if(timeSer.get(id)==null) {
+			throw new NotFoundDataException("Time id");
+		}
 		Time time = converTime(tim);
 		Set<Sales> sales = new HashSet<>();
 		sales.addAll(salesSer.findByTime(time));
@@ -91,7 +101,7 @@ public class TimeController {
 
 	public TimeDTO convertDTO(Time time) {
 		TimeDTO temp = null;
-		if(time == null) {
+		if (time == null) {
 			throw new NotFoundDataException("");
 		}
 		temp = new TimeDTO(time.getTimeId(), time.getMonth(), time.getQuarter(), time.getYear(), time.getCreateAt(),

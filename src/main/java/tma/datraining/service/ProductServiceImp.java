@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import tma.datraining.model.Product;
+import tma.datraining.model.cassandra.CassProduct;
 import tma.datraining.repository.ProductRepository;
+import tma.datraining.repository.cassandra.CassProductRepo;
 
 @Service
 @Transactional
@@ -17,6 +19,9 @@ public class ProductServiceImp implements ProductService{
 
 	@Autowired
 	private ProductRepository productRepo;
+	
+	@Autowired
+	private CassProductRepo cassRepo;
 	
 	@Override
 	public List<Product> list() {
@@ -62,6 +67,36 @@ public class ProductServiceImp implements ProductService{
 		List<Product> list = null;
 		list = productRepo.findByClassProduct(classProduct);
 		return list;
+	}
+
+	@Override
+	public List<CassProduct> listCass() {
+		// TODO Auto-generated method stub
+		return (List<CassProduct>) cassRepo.findAll();
+	}
+
+	@Override
+	public UUID saveCass(CassProduct product) {
+		cassRepo.save(product);
+		return product.getProductId();
+	}
+
+	@Override
+	public CassProduct getCass(UUID id) {
+		// TODO Auto-generated method stub
+		return (CassProduct) cassRepo.findById(id).get();
+	}
+
+	@Override
+	public void updateCass(UUID id, CassProduct product) {
+		// TODO Auto-generated method stub
+		cassRepo.save(product);
+	}
+
+	@Override
+	public void deleteCass(UUID id) {
+		// TODO Auto-generated method stub
+		cassRepo.delete(cassRepo.findById(id).get());
 	}
 
 }

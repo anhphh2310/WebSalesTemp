@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import tma.datraining.model.Location;
+import tma.datraining.model.cassandra.CassLocation;
 import tma.datraining.repository.LocationRepository;
+import tma.datraining.repository.cassandra.CassLocationRepo;
 
 @Service
 @Transactional
@@ -17,6 +19,9 @@ public class LocationServiceImp implements LocationService{
 
 	@Autowired
 	private LocationRepository locationRepo;
+	
+	@Autowired
+	private CassLocationRepo cassRepo;
 	
 	@Override
 	public List<Location> list() {
@@ -52,6 +57,38 @@ public class LocationServiceImp implements LocationService{
 	public void delete(UUID id) {
 		// TODO Auto-generated method stub
 		locationRepo.delete(locationRepo.findById(id).get());
+	}
+
+	@Override
+	public List<CassLocation> listCass() {
+		return (List<CassLocation>) cassRepo.findAll();
+	}
+
+	@Override
+	public CassLocation getCass(UUID id) {
+		// TODO Auto-generated method stub
+		CassLocation location = null;
+		location = cassRepo.findById(id).get();
+		return location;
+	}
+
+	@Override
+	public UUID saveCass(CassLocation location) {
+		// TODO Auto-generated method stub
+		cassRepo.save(location);
+		return location.getLocationId();
+	}
+
+	@Override
+	public void updateCass(UUID id, CassLocation location) {
+		// TODO Auto-generated method stub
+		cassRepo.save(location);
+	}
+
+	@Override
+	public void deleteCass(UUID id) {
+		// TODO Auto-generated method stub
+		cassRepo.delete(cassRepo.findById(id).get());
 	}
 
 

@@ -1,6 +1,7 @@
 
 package tma.datraining.controller;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -34,12 +35,12 @@ public class SalesController {
 	@Autowired
 	private ProductService proSer;
 
-	@Autowired 
+	@Autowired
 	private LocationService locaSer;
-	
+
 	@Autowired
 	private TimeService timeSer;
-	
+
 	@RequestMapping(value = { "/sales" }, method = RequestMethod.GET, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
@@ -53,51 +54,59 @@ public class SalesController {
 	@ResponseBody
 	public SalesDTO getSale(@PathVariable("salesId") String salesId) {
 		SalesDTO sales = null;
-		try{sales = convertDTO(salesSer.get(UUID.fromString(salesId)));}catch (IllegalArgumentException e) {
+		try {
+			sales = convertDTO(salesSer.get(UUID.fromString(salesId)));
+		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
 		return sales;
 	}
-	
+
 	@RequestMapping(value = { "/sale/product/{productId}" }, method = RequestMethod.GET, produces = {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getSaleByProduct(@PathVariable("productId") String productId) {
 		Product pro = null;
-		try{pro = proSer.get(UUID.fromString(productId));}catch (IllegalArgumentException e) {
+		try {
+			pro = proSer.get(UUID.fromString(productId));
+		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
-		if(pro == null) {
+		if (pro == null) {
 			throw new NotFoundDataException("");
 		}
 		List<SalesDTO> sales = convertDTOList(salesSer.findByProduct(pro));
 		return sales;
 	}
-	
+
 	@RequestMapping(value = { "/sale/location/{locationId}" }, method = RequestMethod.GET, produces = {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getSaleByLocation(@PathVariable("locationId") String locationId) {
 		Location location = null;
-		try{location = locaSer.get(UUID.fromString(locationId));}catch (IllegalArgumentException e) {
+		try {
+			location = locaSer.get(UUID.fromString(locationId));
+		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
-		if(location == null) {
+		if (location == null) {
 			throw new NotFoundDataException("");
 		}
 		List<SalesDTO> sales = convertDTOList(salesSer.findByLocation(location));
 		return sales;
 	}
-	
+
 	@RequestMapping(value = { "/sale/time/{timeId}" }, method = RequestMethod.GET, produces = {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getSaleByTime(@PathVariable("timeId") String timeId) {
 		Time time = null;
-		try{time = timeSer.get(UUID.fromString(timeId));}catch (IllegalArgumentException e) {
+		try {
+			time = timeSer.get(UUID.fromString(timeId));
+		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
-		if(time == null) {
+		if (time == null) {
 			throw new NotFoundDataException("");
 		}
 		List<SalesDTO> sales = convertDTOList(salesSer.findByTime(time));
@@ -108,17 +117,42 @@ public class SalesController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO) {
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		saleDTO.setCreateAt(time);
+		saleDTO.setModifiedAt(time);
 		Sales sale = convertSales(saleDTO);
 		salesSer.save(sale);
 		return saleDTO;
 	}
 
+	@RequestMapping(value = { "/sale/{saleId}" }, method = RequestMethod.PUT, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO, @PathVariable("saleId")String saleId) {
+		UUID id = null;
+		try {
+			id = UUID.fromString(saleId);
+		} catch (IllegalArgumentException e) {
+			throw new NotFoundDataException("Sales Id");
+		}
+		if(salesSer.get(id)==null) {
+			throw new NotFoundDataException("Sales Id ");
+		}
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		saleDTO.setCreateAt(time);
+		saleDTO.setModifiedAt(time);
+		Sales sale = convertSales(saleDTO);
+		salesSer.save(sale);
+		return saleDTO;
+	}
 	@RequestMapping(value = { "/sale/{salesId}" }, method = RequestMethod.DELETE, produces = {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public void deleteSales(@PathVariable("salesId") String salesId) {
 		SalesDTO sales = null;
-		try{sales = convertDTO(salesSer.get(UUID.fromString(salesId)));}catch (IllegalArgumentException e) {
+		try {
+			sales = convertDTO(salesSer.get(UUID.fromString(salesId)));
+		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
 		salesSer.delete(sales.getSalesId());
@@ -127,6 +161,9 @@ public class SalesController {
 
 	public SalesDTO convertDTO(Sales sales) {
 		SalesDTO temp = null;
+		if(sales == null) {
+			throw new NotFoundDataException("Sales Id");
+		}
 		temp = new SalesDTO(sales.getSalesId(), sales.getProduct().getProductId(), sales.getTime().getTimeId(),
 				sales.getLocation().getLocationId(), sales.getDollars(), sales.getCreateAt(), sales.getModifiedAt());
 		return temp;
@@ -140,7 +177,9 @@ public class SalesController {
 
 	public Sales convertSales(SalesDTO salesDTO) {
 		Sales sales = null;
-		sales = new Sales(proSer.get(salesDTO.getProduct()), timeSer.get(salesDTO.getTime()), locaSer.get(salesDTO.getLocation()), salesDTO.getDollars(), salesDTO.getCreateAt(), salesDTO.getModifiedAt());
+		sales = new Sales(proSer.get(salesDTO.getProduct()), timeSer.get(salesDTO.getTime()),
+				locaSer.get(salesDTO.getLocation()), salesDTO.getDollars(), salesDTO.getCreateAt(),
+				salesDTO.getModifiedAt());
 		sales.setSalesId(salesDTO.getSalesId());
 		return sales;
 	}

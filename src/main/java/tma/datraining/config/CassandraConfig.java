@@ -15,30 +15,30 @@ public class CassandraConfig extends AbstractCassandraConfiguration {
 	public static final String KEYSPACE = "datraining";
 
 	@Override
-    public SchemaAction getSchemaAction() {
-        return SchemaAction.CREATE_IF_NOT_EXISTS;
-    }
+	public SchemaAction getSchemaAction() {
+		return SchemaAction.CREATE_IF_NOT_EXISTS;
+	}
 
-    @Override
-    protected List<CreateKeyspaceSpecification> getKeyspaceCreations() {
-        CreateKeyspaceSpecification specification = CreateKeyspaceSpecification.createKeyspace(KEYSPACE);
+	@Override
+	protected List<CreateKeyspaceSpecification> getKeyspaceCreations() {
+		CreateKeyspaceSpecification specification = CreateKeyspaceSpecification.createKeyspace(KEYSPACE);
 
-        return Arrays.asList(specification);
-    }
+		return Arrays.asList(specification);
+	}
 
-    @Override
-    protected List<DropKeyspaceSpecification> getKeyspaceDrops() {
-        return Arrays.asList(DropKeyspaceSpecification.dropKeyspace(KEYSPACE));
-    }
-    
+	@Override
+	protected List<DropKeyspaceSpecification> getKeyspaceDrops() {
+		return Arrays.asList(DropKeyspaceSpecification.dropKeyspace(KEYSPACE));
+	}
+
 	@Override
 	protected String getKeyspaceName() {
 		// TODO Auto-generated method stub
 		return KEYSPACE;
 	}
 
-	 @Override
-	    public String[] getEntityBasePackages() {
-	        return new String[]{"tma.datraining.model.cassandra"};
-	    }
+	@Override
+	public String[] getEntityBasePackages() {
+		return new String[] { "tma.datraining.model.cassandra" };
+	}
 }

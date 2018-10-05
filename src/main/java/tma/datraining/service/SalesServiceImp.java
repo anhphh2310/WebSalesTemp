@@ -12,7 +12,9 @@ import tma.datraining.model.Location;
 import tma.datraining.model.Product;
 import tma.datraining.model.Sales;
 import tma.datraining.model.Time;
+import tma.datraining.model.cassandra.CassSales;
 import tma.datraining.repository.SalesRepository;
+import tma.datraining.repository.cassandra.CassSalesRepo;
 
 @Service
 @Transactional
@@ -20,6 +22,9 @@ public class SalesServiceImp implements SalesService{
 
 	@Autowired
 	private SalesRepository salesRepo;
+	
+	@Autowired
+	private CassSalesRepo cassRepo;
 	
 	@Override
 	public List<Sales> list() {
@@ -71,5 +76,38 @@ public class SalesServiceImp implements SalesService{
 	public List<Sales> findByTime(Time time) {
 		List<Sales> sales = salesRepo.findByTime(time);
 		return sales;
+	}
+
+	@Override
+	public List<CassSales> listCass() {
+		// TODO Auto-generated method stub
+		return (List<CassSales>) cassRepo.findAll();
+	}
+
+	@Override
+	public UUID saveCass(CassSales sale) {
+		// TODO Auto-generated method stub
+		cassRepo.save(sale);
+		return sale.getProductId();
+	}
+
+	@Override
+	public CassSales getCass(UUID id) {
+		// TODO Auto-generated method stub
+		CassSales sales = null;
+		sales = cassRepo.findById(id).get();
+		return sales;
+	}
+
+	@Override
+	public void updateCass(UUID id, CassSales sales) {
+		// TODO Auto-generated method stub
+		cassRepo.save(sales);
+	}
+
+	@Override
+	public void deleteCass(UUID id) {
+		// TODO Auto-generated method stub
+		cassRepo.delete(cassRepo.findById(id).get());
 	}
 }

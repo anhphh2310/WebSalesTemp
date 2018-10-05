@@ -1,5 +1,6 @@
 package tma.datraining.controller;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -15,11 +16,14 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import tma.datraining.dto.ProductDTO;
+import tma.datraining.exception.BadRequestException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Product;
 import tma.datraining.model.Sales;
+import tma.datraining.model.cassandra.CassProduct;
 import tma.datraining.service.ProductService;
 import tma.datraining.service.SalesService;
+import tma.datraining.service.cassandra.CassProductService;
 
 @RestController
 public class ProductController {
@@ -29,6 +33,9 @@ public class ProductController {
 
 	@Autowired
 	private SalesService salesSer;
+
+	@Autowired
+	private CassProductService cassSer;
 
 	@RequestMapping(value = { "/products" }, method = RequestMethod.GET, produces = { "application/json",
 			"application/xml" })
@@ -46,7 +53,21 @@ public class ProductController {
 		try {
 			pro = convertDTO(productSer.get(UUID.fromString(productId)));
 		} catch (IllegalArgumentException e) {
-			throw new NotFoundDataException("No data found!");
+			throw new NotFoundDataException("Product Id ");
+		}
+		return pro;
+
+	}
+
+	@RequestMapping(value = { "/product/cass/{productId}" }, method = RequestMethod.GET, produces = { "application/json",
+			"application/xml" })
+	@ResponseBody
+	public CassProduct getProductCass(@PathVariable("productId") String productId) {
+		CassProduct pro = null;
+		try {
+			pro = productSer.getCass(UUID.fromString(productId));
+		} catch (IllegalArgumentException e) {
+			throw new NotFoundDataException("Product Id ");
 		}
 		return pro;
 
@@ -64,10 +85,34 @@ public class ProductController {
 
 	}
 
+	@RequestMapping(value = { "/product/convert" }, method = RequestMethod.GET, produces = { "application/json",
+			"application/xml" })
+	@ResponseBody
+	public String convertToProduct() {
+//		List<Product> list = new ArrayList<>();
+		List<CassProduct> list2 = new ArrayList<>();
+		Timestamp create = null;
+		Timestamp modified = null;
+		for (CassProduct cassProduct : cassSer.list()) {
+			create = cassProduct.getCreateAt();
+			modified = cassProduct.getModifiedAt();
+
+		}
+//		cassSer.list().forEach(e -> list2.add(e));
+		// list.forEach(e -> productSer.save(e));
+		return " " + create + "," + modified;
+	}
+
 	@RequestMapping(value = { "/product" }, method = RequestMethod.POST, produces = { "application/json",
 			"application/xml" })
 	@ResponseBody
-	public ProductDTO addProduct(@RequestBody ProductDTO product) {
+	public ProductDTO addProduct(@RequestBody ProductDTO product) throws BadRequestException {
+		if (product.getInventory().isEmpty() || product.getClassProduct().isEmpty()) {
+			throw new BadRequestException("");
+		}
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		product.setCreateAt(time);
+		product.setModifiedAt(time);
 		Product pro = convertProduct(product);
 		UUID id = productSer.save(pro);
 		System.out.println("Add a new product : " + id);
@@ -75,18 +120,32 @@ public class ProductController {
 
 	}
 
-	@RequestMapping(value = { "/product" }, method = RequestMethod.PUT, produces = { "application/json",
+	@RequestMapping(value = { "/product/productId" }, method = RequestMethod.PUT, produces = { "application/json",
 			"application/xml" })
 	@ResponseBody
-	public ProductDTO updateProduct(@RequestBody ProductDTO pro) {
+	public ProductDTO updateProduct(@RequestBody ProductDTO pro, @PathVariable("productId") String productId) {
+		UUID id = null;
+		try {
+			id = UUID.fromString(productId);
+		} catch (IllegalArgumentException e) {
+			throw new NotFoundDataException("Product Id");
+		}
+		if (pro.getClassProduct().isEmpty() || pro.getInventory().isEmpty()) {
+			throw new BadRequestException("");
+		}
+		if (productSer.get(id) == null) {
+			throw new NotFoundDataException("Product Id ");
+		}
+		pro.setProductId(id);
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		pro.setCreateAt(time);
+		pro.setModifiedAt(time);
 		Product product = convertProduct(pro);
 		Set<Sales> sales = new HashSet<>();
 		sales.addAll(salesSer.findByProduct(product));
 		product.setSales(sales);
 		productSer.update(product.getProductId(), product);
-		System.out.println("Edit a product : " + product.getProductId());
-		ProductDTO pr = convertDTO(product);
-		return pr;
+		return pro;
 	}
 
 	@RequestMapping(value = { "/product/{productId}" }, method = RequestMethod.DELETE, produces = { "application/json",
@@ -106,7 +165,7 @@ public class ProductController {
 	public ProductDTO convertDTO(Product product) {
 		ProductDTO temp = null;
 		if (product == null) {
-			throw new NotFoundDataException("No data found!");
+			throw new NotFoundDataException("Product Id ");
 		}
 		temp = new ProductDTO(product.getProductId(), product.getItem(), product.getClassProduct(),
 				product.getInventory(), product.getCreateAt(), product.getModifiedAt());
@@ -129,4 +188,15 @@ public class ProductController {
 		pro.setProductId(product.getProductId());
 		return pro;
 	}
+
+	public Product convertCassToProduct(CassProduct product) {
+		Product pro = null;
+		if (product == null) {
+			throw new NotFoundDataException("Product Id ");
+		}
+		pro = new Product(product.getItem(), product.getClassProduct(), product.getInventory(),
+				(Timestamp) product.getCreateAt(), (Timestamp) product.getModifiedAt());
+		return pro;
+	}
+
 }

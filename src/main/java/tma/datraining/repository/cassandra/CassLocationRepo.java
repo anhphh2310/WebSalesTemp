@@ -6,6 +6,6 @@ import org.springframework.data.repository.CrudRepository;
 
 import tma.datraining.model.cassandra.CassLocation;
 
-public interface CassLocationRepo extends CrudRepository<CassLocation, UUID>{
+public interface CassLocationRepo extends CrudRepository<CassLocation, UUID> {
 
 }

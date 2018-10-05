@@ -9,32 +9,29 @@ import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
+import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.DataType.Name;
 
 @Table("location")
 public class CassLocation {
 
 	private UUID locationId;
-	private String coutry;
+	private String country;
 	private String city;
 	private Timestamp createAt;
 	private Timestamp modifiedAt;
 
-	public CassLocation(UUID locationId, String coutry, String city, Timestamp createAt, Timestamp modifiedAt) {
+	public CassLocation(UUID locationId, String country, String city, Timestamp createAt, Timestamp modifiedAt) {
 		super();
 		this.locationId = locationId;
-		this.coutry = coutry;
+		this.country = country;
 		this.city = city;
 		this.createAt = createAt;
 		this.modifiedAt = modifiedAt;
 	}
 
-	public CassLocation() {
-		super();
-	}
-
-	@PrimaryKeyColumn(name="location_id",type=PrimaryKeyType.PARTITIONED,ordinal=1)
-	@CassandraType(type=Name.UUID)
+	@PrimaryKeyColumn(name="location_id",type = PrimaryKeyType.PARTITIONED)
+	@CassandraType(type=DataType.Name.UUID)
 	public UUID getLocationId() {
 		return locationId;
 	}
@@ -44,12 +41,12 @@ public class CassLocation {
 	}
 
 	@Column(value="country")
-	public String getCoutry() {
-		return coutry;
+	public String getCountry() {
+		return country;
 	}
 
-	public void setCoutry(String coutry) {
-		this.coutry = coutry;
+	public void setCountry(String country) {
+		this.country = country;
 	}
 
 	@Column(value="city")
@@ -75,6 +72,10 @@ public class CassLocation {
 	@CassandraType(type = Name.TIMESTAMP)
 	public Timestamp getModifiedAt() {
 		return modifiedAt;
+	}
+
+	public void setModifiedAt(Timestamp modifiedAt) {
+		this.modifiedAt = modifiedAt;
 	}
 
 }

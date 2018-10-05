@@ -1,5 +1,6 @@
 package tma.datraining.controller;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -16,6 +17,7 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import tma.datraining.dto.LocationDTO;
+import tma.datraining.exception.BadRequestException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
 import tma.datraining.model.Sales;
@@ -30,7 +32,7 @@ public class LocationController {
 
 	@Autowired
 	private SalesService salesSer;
-	
+
 	@RequestMapping(value = { "/locations" }, method = RequestMethod.GET, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
@@ -44,9 +46,10 @@ public class LocationController {
 	@ResponseBody
 	public LocationDTO getLocation(@PathVariable("locationId") String locationId) {
 		LocationDTO loca = null;
-		try{loca = convertDTO(locaSer.get(UUID.fromString(locationId)));}
-		catch (IllegalArgumentException e) {
-			throw new NotFoundDataException("");
+		try {
+			loca = convertDTO(locaSer.get(UUID.fromString(locationId)));
+		} catch (IllegalArgumentException e) {
+			throw new NotFoundDataException("Location Id");
 		}
 		return loca;
 	}
@@ -54,22 +57,46 @@ public class LocationController {
 	@RequestMapping(value = { "/location" }, method = RequestMethod.POST, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public LocationDTO saveLocation(@RequestBody Location location) {
-		locaSer.save(location);
-		LocationDTO loca = convertDTO(location);
-		return loca;
+	public LocationDTO saveLocation(@RequestBody LocationDTO location) {
+		if (location.getCity().isEmpty() || location.getCountry().isEmpty()) {
+			throw new BadRequestException("");
+		}
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		location.setCreateAt(time);
+		location.setModifiedAt(time);
+		Location loca = convertLocation(location);
+		locaSer.save(loca);
+		return location;
 	}
 
-	@RequestMapping(value = { "/location" }, method = RequestMethod.PUT, produces = { MediaType.APPLICATION_JSON_VALUE,
-			MediaType.APPLICATION_XML_VALUE })
+	@RequestMapping(value = { "/location/{locationId}" }, method = RequestMethod.PUT, produces = {
+			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public LocationDTO updateLocation(@RequestBody LocationDTO loca) {
-		Location location = convertLocation(loca);
+	public LocationDTO updateLocation(@RequestBody LocationDTO location,
+			@PathVariable("locationId") String locationId) {
+		UUID id = null;
+		try {
+			id = UUID.fromString(locationId);
+		} catch (IllegalArgumentException e) {
+			throw new NotFoundDataException("Location Id");
+		}
+		if (location.getCity().isEmpty() || location.getCountry().isEmpty()) {
+			throw new BadRequestException("");
+		}
+		
+		if (locaSer.get(id) == null) {
+			throw new NotFoundDataException("Location Id");
+		}
+		location.setLocationId(id);
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		location.setCreateAt(time);
+		location.setModifiedAt(time);
+		Location loca = convertLocation(location);
 		Set<Sales> sales = new HashSet<>();
-		sales.addAll(salesSer.findByLocation(location));
-		location.setSales(sales);
-		locaSer.update(location.getLocationId(), location);
-		return loca;
+		sales.addAll(salesSer.findByLocation(loca));
+		loca.setSales(sales);
+		locaSer.update(loca.getLocationId(), loca);
+		return location;
 	}
 
 	@RequestMapping(value = { "/location/{locationId}" }, method = RequestMethod.DELETE, produces = {
@@ -77,8 +104,9 @@ public class LocationController {
 	@ResponseBody
 	public void deleteLocation(@PathVariable("locationId") String locationId) {
 		LocationDTO loca = null;
-		try{loca = convertDTO(locaSer.get(UUID.fromString(locationId)));}
-		catch (IllegalArgumentException e) {
+		try {
+			loca = convertDTO(locaSer.get(UUID.fromString(locationId)));
+		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
 		locaSer.delete(loca.getLocationId());
@@ -87,8 +115,8 @@ public class LocationController {
 
 	public LocationDTO convertDTO(Location location) {
 		LocationDTO temp = null;
-		if(location == null) {
-			throw new NotFoundDataException("");
+		if (location == null) {
+			throw new NotFoundDataException("Location Id");
 		}
 		temp = new LocationDTO(location.getLocationId(), location.getCountry(), location.getCity(),
 				location.getCreateAt(), location.getModifiedAt());
@@ -100,10 +128,11 @@ public class LocationController {
 		list.forEach(e -> list2.add(convertDTO(e)));
 		return list2;
 	}
-	
+
 	public Location convertLocation(LocationDTO location) {
 		Location loca = null;
-		loca = new Location(location.getCountry(), location.getCity(), location.getCreateAt(), location.getModifiedAt());
+		loca = new Location(location.getCountry(), location.getCity(), location.getCreateAt(),
+				location.getModifiedAt());
 		loca.setLocationId(location.getLocationId());
 		return loca;
 	}

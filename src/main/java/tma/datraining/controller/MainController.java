@@ -1,6 +1,7 @@
 package tma.datraining.controller;
 
 import java.math.BigDecimal;
+import java.sql.Timestamp;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,10 +9,11 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import tma.datraining.model.Location;
 import tma.datraining.model.Product;
-import tma.datraining.model.Sales;
-import tma.datraining.model.Time;
+import tma.datraining.model.cassandra.CassLocation;
+import tma.datraining.model.cassandra.CassProduct;
+import tma.datraining.model.cassandra.CassSales;
+import tma.datraining.model.cassandra.CassTime;
 import tma.datraining.service.LocationService;
 import tma.datraining.service.ProductService;
 import tma.datraining.service.SalesService;
@@ -21,16 +23,16 @@ import tma.datraining.service.TimeService;
 public class MainController {
 
 	@Autowired
-	private LocationService locaSer;
+	private LocationService cassLocaSer;
 
 	@Autowired
-	private ProductService productSer;
+	private ProductService cassProductSer;
 
 	@Autowired
-	private SalesService salesSer;
+	private SalesService cassSalesSer;
 
 	@Autowired
-	private TimeService timeSer;
+	private TimeService cassTimeSer;
 
 	private boolean flag = false;
 
@@ -46,59 +48,63 @@ public class MainController {
 
 	public void autoCreate() {
 		// Location
-		java.sql.Timestamp time1 = java.sql.Timestamp.valueOf("2018-08-27 10:10:10.0");
-		java.sql.Timestamp time2 = java.sql.Timestamp.valueOf("2018-08-28 10:10:10.0");
-		UUID locaId = locaSer.save(new Location("VIETNAM", "Ho Chi Minh city", time1, time2));
-		UUID locaId2 = locaSer.save(new Location("VIETNAM", "Da Nang city", time1, time2));
-		UUID locaId3 = locaSer.save(new Location("VIETNAM", "Ha Noi city", time1, time2));
-		UUID locaId4 = locaSer.save(new Location("VIETNAM", "Dong Thap city", time1, time2));
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+
+		UUID idL1 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "VIETNAM", "Ho Chi Minh City", time, time));
+		UUID idL2 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "VIETNAM", "Ha Noi City", time, time));
+		UUID idL3 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "CHINA", "Beijing", time, time));
+		UUID idL4 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "KOREA", "Seoul City", time, time));
+		UUID idL5 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "JAPAN", "Tokyo City", time, time));
+		UUID idL6 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "RUSSIA", "Moscow City", time, time));
+		UUID idL7 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "ENGLAND", "London City", time, time));
+		UUID idL8 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "AMERICAN", "Ho Chi Minh City", time, time));
+		UUID idL9 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "CANADA", "Ottawa City", time, time));
+		UUID idL10 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "AUSTRALIA", "Canbera City", time, time));
+		UUID idL11 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "SPAIN", "Madrid City", time, time));
 
 		// Product
-		java.sql.Timestamp time3 = java.sql.Timestamp.valueOf("2018-09-27 13:10:10.0");
-		java.sql.Timestamp time4 = java.sql.Timestamp.valueOf("2018-09-28 16:10:10.0");
-		UUID productId = productSer.save(new Product(100, "SCREEN", "Inv-1", time3, time4));
-		UUID productId1 = productSer.save(new Product(105, "CABLE", "Inv-2", time3, time4));
-		UUID productId2 = productSer.save(new Product(170, "MOUSE", "Inv-3", time3, time4));
-		UUID productId3 = productSer.save(new Product(190, "KEYBOARD", "Inv-4", time3, time4));
-		UUID productId4 = productSer.save(new Product(250, "SPEAKER", "Inv-5", time3, time4));
-		UUID productId5 = productSer.save(new Product(199, "RECORDER", "Inv-6", time3, time4));
-		UUID productId6 = productSer.save(new Product(180, "CORE", "Inv-7", time3, time4));
-		UUID productId7 = productSer.save(new Product(201, "PRINTER", "Inv-8", time3, time4));
-		UUID productId8 = productSer.save(new Product(120, "SCANNER", "Inv-9", time3, time4));
-		UUID productId9 = productSer.save(new Product(231, "STORAGE", "Inv-10", time3, time4));
+
+		UUID idP1 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 100, "CREEN", "Inv-1", time, time));
+		UUID idP2 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 100, "SCREEN", "Inv-1", time, time));
+		UUID idP3 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 105, "CABLE", "Inv-2", time, time));
+		UUID idP4 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 170, "MOUSE", "Inv-3", time, time));
+		UUID idP5 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 190, "KEYBOARD", "Inv-4", time, time));
+		UUID idP6 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 250, "SPEAKER", "Inv-5", time, time));
+		UUID idP7 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 199, "RECORDER", "Inv-6", time, time));
+		UUID idP8 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 180, "CORE", "Inv-7", time, time));
+		UUID idP9 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 201, "PRINTER", "Inv-8", time, time));
+		UUID idP10 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 120, "SCANNER", "Inv-9", time, time));
+		UUID idP11 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 231, "STORAGE", "Inv-10", time, time));
 
 		// Time
-		java.sql.Timestamp time5 = java.sql.Timestamp.valueOf("2018-09-27 1:10:10.0");
-		java.sql.Timestamp time6 = java.sql.Timestamp.valueOf("2018-09-28 5:10:10.0");
-		UUID timeId = timeSer.save(new Time(9, 27, 2018, time5, time6));
-		UUID timeId1 = timeSer.save(new Time(9, 26, 2018, time5, time6));
-		UUID timeId2 = timeSer.save(new Time(9, 25, 2018, time5, time6));
-		UUID timeId3 = timeSer.save(new Time(9, 24, 2018, time5, time6));
+
+		UUID idT1 = cassTimeSer.saveCass(new CassTime(UUID.randomUUID(), 9, 27, 2018, time, time));
+		UUID idT2 = cassTimeSer.saveCass(new CassTime(UUID.randomUUID(), 9, 26, 2018, time, time));
+		UUID idT3 = cassTimeSer.saveCass(new CassTime(UUID.randomUUID(), 9, 25, 2018, time, time));
+		UUID idT4 = cassTimeSer.saveCass(new CassTime(UUID.randomUUID(), 9, 24, 2018, time, time));
 
 		// Sale
-		java.sql.Timestamp time7 = java.sql.Timestamp.valueOf("2018-09-27 3:10:10.0");
-		java.sql.Timestamp time8 = java.sql.Timestamp.valueOf("2018-09-28 5:10:10.0");
-		salesSer.save(new Sales(productSer.get(productId), timeSer.get(timeId), locaSer.get(locaId),
-				new BigDecimal("100.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId1), timeSer.get(timeId1), locaSer.get(locaId),
-				new BigDecimal("100.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId1), timeSer.get(timeId1), locaSer.get(locaId2),
-				new BigDecimal("150.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId3), timeSer.get(timeId2), locaSer.get(locaId4),
-				new BigDecimal("90.78"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId5), timeSer.get(timeId3), locaSer.get(locaId4),
-				new BigDecimal("190.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId9), timeSer.get(timeId2), locaSer.get(locaId3),
-				new BigDecimal("462.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId2), timeSer.get(timeId3), locaSer.get(locaId3),
-				new BigDecimal("462.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId4), timeSer.get(timeId2), locaSer.get(locaId),
-				new BigDecimal("462.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId6), timeSer.get(timeId1), locaSer.get(locaId),
-				new BigDecimal("462.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId7), timeSer.get(timeId2), locaSer.get(locaId2),
-				new BigDecimal("462.0"), time7, time8));
-		salesSer.save(new Sales(productSer.get(productId8), timeSer.get(timeId), locaSer.get(locaId2),
-				new BigDecimal("462.0"), time7, time8));
+
+		cassSalesSer.saveCass(new CassSales(idP1, idT1, idL1, new BigDecimal("100.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP2, idT2, idL5, new BigDecimal("100.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP3, idT4, idL4, new BigDecimal("150.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP4, idT1, idL6, new BigDecimal("90.78"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP5, idT3, idL2, new BigDecimal("190.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP7, idT2, idL3, new BigDecimal("462.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP8, idT2, idL7, new BigDecimal("462.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP9, idT4, idL9, new BigDecimal("462.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP10, idT4, idL10, new BigDecimal("462.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP11, idT1, idL11, new BigDecimal("462.0"), time, time));
+		cassSalesSer.saveCass(new CassSales(idP6, idT3, idL8, new BigDecimal("462.0"), time, time));
+		
+		System.out.println(cassProductSer.getCass(idP1));
+
+	}
+
+	public CassProduct convertCassProduct(Product product) {
+		CassProduct cassPro = null;
+		cassPro = new CassProduct(product.getProductId(), product.getItem(), product.getClassProduct(),
+				product.getInventory(), product.getCreateAt(), product.getModifiedAt());
+		return cassPro;
 	}
 }

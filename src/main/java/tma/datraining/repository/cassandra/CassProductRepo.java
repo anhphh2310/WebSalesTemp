@@ -8,4 +8,5 @@ import tma.datraining.model.cassandra.CassProduct;
 
 public interface CassProductRepo extends CrudRepository<CassProduct, UUID>{
 
+	CassProduct findByProductId(UUID productId);
 }

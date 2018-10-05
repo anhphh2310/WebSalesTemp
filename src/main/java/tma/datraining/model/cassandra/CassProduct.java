@@ -9,6 +9,7 @@ import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
+import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.DataType.Name;
 
 @Table("product")
@@ -32,12 +33,8 @@ public class CassProduct {
 		this.modifiedAt = modifiedAt;
 	}
 
-	public CassProduct() {
-		super();
-	}
-
-	@PrimaryKeyColumn(name="product_id",type=PrimaryKeyType.PARTITIONED,ordinal=1)
-	@CassandraType(type=Name.UUID)
+	@PrimaryKeyColumn(name="product_id",type=PrimaryKeyType.PARTITIONED)
+	@CassandraType(type=DataType.Name.UUID)
 	public UUID getProductId() {
 		return productId;
 	}
@@ -91,12 +88,6 @@ public class CassProduct {
 
 	public void setModifiedAt(Timestamp modifiedAt) {
 		this.modifiedAt = modifiedAt;
-	}
-
-	@Override
-	public String toString() {
-		return "CassProduct [productId=" + productId + ", item=" + item + ", classProduct=" + classProduct
-				+ ", inventory=" + inventory + ", createAt=" + createAt + ", modifiedAt=" + modifiedAt + "]";
 	}
 
 }

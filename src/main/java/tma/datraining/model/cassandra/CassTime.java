@@ -9,6 +9,7 @@ import org.springframework.data.cassandra.core.mapping.Column;
 import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
 import org.springframework.data.cassandra.core.mapping.Table;
 
+import com.datastax.driver.core.DataType;
 import com.datastax.driver.core.DataType.Name;
 
 @Table("time")
@@ -31,12 +32,8 @@ public class CassTime {
 		this.modifiedAt = modifiedAt;
 	}
 
-	public CassTime() {
-		super();
-	}
-
-	@PrimaryKeyColumn(name="time_id",type=PrimaryKeyType.PARTITIONED,ordinal=1)
-	@CassandraType(type=Name.UUID)
+	@PrimaryKeyColumn(name="time_id",type=PrimaryKeyType.PARTITIONED)
+	@CassandraType(type=DataType.Name.UUID)
 	public UUID getTimeId() {
 		return timeId;
 	}
@@ -92,11 +89,4 @@ public class CassTime {
 		this.modifiedAt = modifiedAt;
 	}
 
-	@Override
-	public String toString() {
-		return "CassTime [timeId=" + timeId + ", month=" + month + ", quarter=" + quarter + ", year=" + year
-				+ ", createAt=" + createAt + ", modifiedAt=" + modifiedAt + "]";
-	}
-
-	
 }
