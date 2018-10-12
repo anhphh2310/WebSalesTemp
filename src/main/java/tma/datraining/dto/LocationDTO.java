@@ -11,13 +11,8 @@ public class LocationDTO {
 	private Timestamp createAt;
 	private Timestamp modifiedAt;
 
-	public LocationDTO(UUID locationId, String country, String city, Timestamp createAt, Timestamp modifiedAt) {
+	public LocationDTO() {
 		super();
-		this.locationId = locationId;
-		this.country = country;
-		this.city = city;
-		this.createAt = createAt;
-		this.modifiedAt = modifiedAt;
 	}
 
 	public UUID getLocationId() {

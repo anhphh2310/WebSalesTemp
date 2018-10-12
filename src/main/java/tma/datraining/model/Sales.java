@@ -53,7 +53,7 @@ public class Sales {
 	}
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name="product_id",updatable=false)
+	@JoinColumn(name="product_id",updatable=false,nullable=false)
 	public Product getProduct() {
 		return product;
 	}
@@ -63,7 +63,7 @@ public class Sales {
 	}
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name="time_id",nullable=false)
+	@JoinColumn(name="time_id",nullable=false,updatable=false)
 	public Time getTime() {
 		return time;
 	}
@@ -73,7 +73,7 @@ public class Sales {
 	}
 
 	@ManyToOne(fetch=FetchType.LAZY)
-	@JoinColumn(name="location_id", updatable=false)
+	@JoinColumn(name="location_id", updatable=false,nullable=false)
 	public Location getLocation() {
 		return location;
 	}

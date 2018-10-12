@@ -10,4 +10,5 @@ import tma.datraining.model.Product;
 public interface ProductRepository extends CrudRepository<Product, UUID>{
 
 	List<Product> findByClassProduct(String classProduct);
+	
 }

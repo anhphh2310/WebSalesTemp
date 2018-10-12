@@ -41,7 +41,6 @@ public class CassProductServiceImp implements CassProductService {
 
 	@Override
 	public void delete(UUID id) {
-		// TODO Auto-generated method stub
 		cassRepo.delete(cassRepo.findById(id).get());
 	}
 

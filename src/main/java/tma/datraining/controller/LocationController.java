@@ -7,24 +7,33 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.LocationDTO;
 import tma.datraining.exception.BadRequestException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
 import tma.datraining.model.Sales;
+import tma.datraining.model.cassandra.CassLocation;
 import tma.datraining.service.LocationService;
 import tma.datraining.service.SalesService;
+import tma.datraining.service.cassandra.CassLocationService;
 
 @RestController
+@RequestMapping("/location")
 public class LocationController {
 
 	@Autowired
@@ -33,16 +42,35 @@ public class LocationController {
 	@Autowired
 	private SalesService salesSer;
 
-	@RequestMapping(value = { "/locations" }, method = RequestMethod.GET, produces = { MediaType.APPLICATION_JSON_VALUE,
-			MediaType.APPLICATION_XML_VALUE })
+	@Autowired
+	private CassLocationService cassSer;
+
+	@Autowired
+	private DateTimeToTimestampConverter converter;
+	
+	private static final Logger LOG = LoggerFactory.getLogger(LocationController.class);
+	
+	@GetMapping(value = "/convert", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public List<LocationDTO> getLocations() {
-		List<LocationDTO> list = convertDTOList(locaSer.list());
+	public List<LocationDTO> getConvertLocations() {
+		List<LocationDTO> list = new ArrayList<>();
+		cassSer.list().forEach(e -> list.add(convertCassToDTO(e)));
+		for (LocationDTO location : list) {
+			locaSer.save(convertLocation(location));
+		}
 		return list;
 	}
 
-	@RequestMapping(value = { "/location/{locationId}" }, method = RequestMethod.GET, produces = {
-			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+	@GetMapping(value = "/list", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<LocationDTO> getLocations() {
+		List<LocationDTO> list = new ArrayList<>();
+		locaSer.list().forEach(e -> list.add(convertDTO(e)));
+		return list;
+	}
+
+	@GetMapping(value = { "/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public LocationDTO getLocation(@PathVariable("locationId") String locationId) {
 		LocationDTO loca = null;
@@ -54,8 +82,7 @@ public class LocationController {
 		return loca;
 	}
 
-	@RequestMapping(value = { "/location" }, method = RequestMethod.POST, produces = { MediaType.APPLICATION_JSON_VALUE,
-			MediaType.APPLICATION_XML_VALUE })
+	@PostMapping(value = { "/add" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public LocationDTO saveLocation(@RequestBody LocationDTO location) {
 		if (location.getCity().isEmpty() || location.getCountry().isEmpty()) {
@@ -69,8 +96,8 @@ public class LocationController {
 		return location;
 	}
 
-	@RequestMapping(value = { "/location/{locationId}" }, method = RequestMethod.PUT, produces = {
-			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+	@PutMapping(value = { "/update/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public LocationDTO updateLocation(@RequestBody LocationDTO location,
 			@PathVariable("locationId") String locationId) {
@@ -83,13 +110,13 @@ public class LocationController {
 		if (location.getCity().isEmpty() || location.getCountry().isEmpty()) {
 			throw new BadRequestException("");
 		}
-		
+
 		if (locaSer.get(id) == null) {
 			throw new NotFoundDataException("Location Id");
 		}
 		location.setLocationId(id);
 		Timestamp time = new Timestamp(System.currentTimeMillis());
-		location.setCreateAt(time);
+		location.setCreateAt(locaSer.get(id).getCreateAt());
 		location.setModifiedAt(time);
 		Location loca = convertLocation(location);
 		Set<Sales> sales = new HashSet<>();
@@ -99,8 +126,8 @@ public class LocationController {
 		return location;
 	}
 
-	@RequestMapping(value = { "/location/{locationId}" }, method = RequestMethod.DELETE, produces = {
-			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+	@DeleteMapping(value = { "/delete/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public void deleteLocation(@PathVariable("locationId") String locationId) {
 		LocationDTO loca = null;
@@ -113,22 +140,23 @@ public class LocationController {
 		System.out.println("Delete location : " + locationId);
 	}
 
+	//
+	// Convert
+	// Location to DTO
 	public LocationDTO convertDTO(Location location) {
-		LocationDTO temp = null;
+		LocationDTO temp = new LocationDTO();
 		if (location == null) {
 			throw new NotFoundDataException("Location Id");
 		}
-		temp = new LocationDTO(location.getLocationId(), location.getCountry(), location.getCity(),
-				location.getCreateAt(), location.getModifiedAt());
+		temp.setLocationId(location.getLocationId());
+		temp.setCity(location.getCity());
+		temp.setCountry(location.getCountry());
+		temp.setCreateAt(location.getCreateAt());
+		temp.setModifiedAt(location.getModifiedAt());
 		return temp;
 	}
 
-	public List<LocationDTO> convertDTOList(List<Location> list) {
-		List<LocationDTO> list2 = new ArrayList<>();
-		list.forEach(e -> list2.add(convertDTO(e)));
-		return list2;
-	}
-
+	// DTO to Location
 	public Location convertLocation(LocationDTO location) {
 		Location loca = null;
 		loca = new Location(location.getCountry(), location.getCity(), location.getCreateAt(),
@@ -136,4 +164,18 @@ public class LocationController {
 		loca.setLocationId(location.getLocationId());
 		return loca;
 	}
+
+	public LocationDTO convertCassToDTO(CassLocation loca) {
+		if (loca == null) {
+			throw new NotFoundDataException("");
+		}
+		LocationDTO location = new LocationDTO();
+		location.setLocationId(loca.getLocationId());
+		location.setCity(loca.getCity());
+		location.setCountry(loca.getCountry());
+		location.setCreateAt(converter.convert(loca.getCreateAt()));
+		location.setModifiedAt(converter.convert(loca.getModifiedAt()));
+		return location;
+	}
+
 }

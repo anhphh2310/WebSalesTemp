@@ -84,7 +84,9 @@ public class ProductServiceImp implements ProductService{
 	@Override
 	public CassProduct getCass(UUID id) {
 		// TODO Auto-generated method stub
-		return (CassProduct) cassRepo.findById(id).get();
+		CassProduct product = null;
+		product = cassRepo.findById(id).get();
+		return product;
 	}
 
 	@Override

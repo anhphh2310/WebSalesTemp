@@ -12,13 +12,8 @@ public class TimeDTO {
 	private Timestamp createAt;
 	private Timestamp modifiedAt;
 
-	public TimeDTO(UUID timeId, int month, int quarter, int year, Timestamp createAt, Timestamp modifiedAt) {		super();
-		this.timeId = timeId;
-		this.month = month;
-		this.quarter = quarter;
-		this.year = year;
-		this.createAt = createAt;
-		this.modifiedAt = modifiedAt;
+	public TimeDTO() {
+		super();
 	}
 
 	public UUID getTimeId() {

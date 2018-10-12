@@ -14,16 +14,8 @@ public class SalesDTO {
 	private Timestamp createAt;
 	private Timestamp modifiedAt;
 
-	public SalesDTO(UUID salesId, UUID product, UUID time, UUID location, BigDecimal dollars, Timestamp createAt,
-			Timestamp modifiedAt) {
+	public SalesDTO() {
 		super();
-		this.salesId = salesId;
-		this.product = product;
-		this.time = time;
-		this.location = location;
-		this.dollars = dollars;
-		this.createAt = createAt;
-		this.modifiedAt = modifiedAt;
 	}
 
 	public UUID getSalesId() {

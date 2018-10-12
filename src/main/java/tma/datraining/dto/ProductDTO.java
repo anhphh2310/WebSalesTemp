@@ -12,15 +12,9 @@ public class ProductDTO {
 	private Timestamp createAt;
 	private Timestamp modifiedAt;
 
-	public ProductDTO(UUID productId, int item, String classProduct, String inventory, Timestamp createAt,
-			Timestamp modifiedAt) {
+	
+	public ProductDTO() {
 		super();
-		this.productId = productId;
-		this.item = item;
-		this.classProduct = classProduct;
-		this.inventory = inventory;
-		this.createAt = createAt;
-		this.modifiedAt = modifiedAt;
 	}
 
 	public UUID getProductId() {

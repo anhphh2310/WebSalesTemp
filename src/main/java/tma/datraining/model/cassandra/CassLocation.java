@@ -1,16 +1,15 @@
 package tma.datraining.model.cassandra;
 
-import java.sql.Timestamp;
 import java.util.UUID;
 
-import org.springframework.data.cassandra.core.cql.PrimaryKeyType;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.springframework.data.cassandra.core.mapping.CassandraType;
 import org.springframework.data.cassandra.core.mapping.Column;
-import org.springframework.data.cassandra.core.mapping.PrimaryKeyColumn;
+import org.springframework.data.cassandra.core.mapping.PrimaryKey;
 import org.springframework.data.cassandra.core.mapping.Table;
 
 import com.datastax.driver.core.DataType;
-import com.datastax.driver.core.DataType.Name;
 
 @Table("location")
 public class CassLocation {
@@ -18,19 +17,19 @@ public class CassLocation {
 	private UUID locationId;
 	private String country;
 	private String city;
-	private Timestamp createAt;
-	private Timestamp modifiedAt;
+	private DateTime createAt;
+	private DateTime modifiedAt;
 
-	public CassLocation(UUID locationId, String country, String city, Timestamp createAt, Timestamp modifiedAt) {
+	public CassLocation(UUID locationId, String country, String city) {
 		super();
 		this.locationId = locationId;
 		this.country = country;
 		this.city = city;
-		this.createAt = createAt;
-		this.modifiedAt = modifiedAt;
+		this.createAt = new DateTime(DateTimeZone.forID("Asia/Saigon"));
+		this.modifiedAt = new DateTime(DateTimeZone.forID("Asia/Saigon"));
 	}
 
-	@PrimaryKeyColumn(name="location_id",type = PrimaryKeyType.PARTITIONED)
+	@PrimaryKey(value="location_id")
 	@CassandraType(type=DataType.Name.UUID)
 	public UUID getLocationId() {
 		return locationId;
@@ -59,22 +58,20 @@ public class CassLocation {
 	}
 
 	@Column(value = "create_at")
-	@CassandraType(type = Name.TIMESTAMP)
-	public Timestamp getCreateAt() {
+	public DateTime getCreateAt() {
 		return createAt;
 	}
 
-	public void setCreateAt(Timestamp createAt) {
+	public void setCreateAt(DateTime createAt) {
 		this.createAt = createAt;
 	}
 
 	@Column(value = "modified_at")
-	@CassandraType(type = Name.TIMESTAMP)
-	public Timestamp getModifiedAt() {
+	public DateTime getModifiedAt() {
 		return modifiedAt;
 	}
 
-	public void setModifiedAt(Timestamp modifiedAt) {
+	public void setModifiedAt(DateTime modifiedAt) {
 		this.modifiedAt = modifiedAt;
 	}
 
