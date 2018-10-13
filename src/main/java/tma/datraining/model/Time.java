@@ -7,7 +7,6 @@ import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -43,7 +42,6 @@ public class Time {
 
 
 	@Id
-	@GeneratedValue
 	@Column(name="time_id", nullable=false, insertable=false)
 	public UUID getTimeId() {
 		return timeId;

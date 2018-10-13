@@ -7,7 +7,6 @@ import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
@@ -41,7 +40,6 @@ public class Product {
 	}
 
 	@Id
-	@GeneratedValue
 	@Column(name="product_id",nullable=false, insertable=false)
 	public UUID getProductId() {
 		return productId;

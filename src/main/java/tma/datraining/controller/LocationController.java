@@ -53,11 +53,9 @@ public class LocationController {
 	@GetMapping(value = "/convert", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<LocationDTO> getConvertLocations() {
+		cassSer.list().forEach(e -> locaSer.save(convertCassToJPA(e)));
 		List<LocationDTO> list = new ArrayList<>();
-		cassSer.list().forEach(e -> list.add(convertCassToDTO(e)));
-		for (LocationDTO location : list) {
-			locaSer.save(convertLocation(location));
-		}
+		locaSer.list().forEach(e -> list.add(convertDTO(e)));
 		return list;
 	}
 
@@ -88,6 +86,7 @@ public class LocationController {
 		if (location.getCity().isEmpty() || location.getCountry().isEmpty()) {
 			throw new BadRequestException("");
 		}
+		location.setLocationId(UUID.randomUUID());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		location.setCreateAt(time);
 		location.setModifiedAt(time);
@@ -129,7 +128,7 @@ public class LocationController {
 	@DeleteMapping(value = { "/delete/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public void deleteLocation(@PathVariable("locationId") String locationId) {
+	public String deleteLocation(@PathVariable("locationId") String locationId) {
 		LocationDTO loca = null;
 		try {
 			loca = convertDTO(locaSer.get(UUID.fromString(locationId)));
@@ -137,7 +136,7 @@ public class LocationController {
 			throw new NotFoundDataException("");
 		}
 		locaSer.delete(loca.getLocationId());
-		System.out.println("Delete location : " + locationId);
+		return "Delete location : " + locationId;
 	}
 
 	//
@@ -165,11 +164,11 @@ public class LocationController {
 		return loca;
 	}
 
-	public LocationDTO convertCassToDTO(CassLocation loca) {
+	public Location convertCassToJPA(CassLocation loca) {
 		if (loca == null) {
 			throw new NotFoundDataException("");
 		}
-		LocationDTO location = new LocationDTO();
+		Location location = new Location();
 		location.setLocationId(loca.getLocationId());
 		location.setCity(loca.getCity());
 		location.setCountry(loca.getCountry());

@@ -38,8 +38,8 @@ public class MainController {
 	@ResponseBody
 	public String getMainPage() {
 		if (flag == false) {
-			autoCreate();
-			flag = true;
+//			autoCreate();
+		flag = true;
 		}
 		return "Welcome to WebSales";
 	}
@@ -53,7 +53,7 @@ public class MainController {
 		UUID idL5 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "JAPAN", "Tokyo City"));
 		UUID idL6 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "RUSSIA", "Moscow City"));
 		UUID idL7 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "ENGLAND", "London City"));
-		UUID idL8 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "AMERICAN", "Ho Chi Minh City"));
+		UUID idL8 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "AMERICAN", "New York City"));
 		UUID idL9 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "CANADA", "Ottawa City"));
 		UUID idL10 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "AUSTRALIA", "Canbera City"));
 		UUID idL11 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "SPAIN", "Madrid City"));

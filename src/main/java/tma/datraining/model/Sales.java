@@ -7,7 +7,6 @@ import java.util.UUID;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
@@ -42,7 +41,6 @@ public class Sales {
 	}
 
 	@Id
-	@GeneratedValue
 	@Column(name="sale_id",nullable=false,insertable=false)
 	public UUID getSalesId() {
 		return salesId;
@@ -83,7 +81,7 @@ public class Sales {
 	}
 
 	
-	@Column(name="dollars",columnDefinition="MONEY")
+	@Column(name="dollars")
 	public BigDecimal getDollars() {
 		return dollars;
 	}

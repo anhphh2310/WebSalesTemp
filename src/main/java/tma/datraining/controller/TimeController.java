@@ -55,9 +55,9 @@ public class TimeController {
 	@ResponseBody
 	public List<TimeDTO> getConvertTime(){
 		LogUtil.debug(LOG, "Request convert data from Cassandra");
+		cassSer.list().forEach(e -> timeSer.save(convertCassToJPA(e)));
 		List<TimeDTO> list = new ArrayList<>();
-		cassSer.list().forEach(e -> list.add(convertCassToDTO(e)));
-		list.forEach(e -> timeSer.save(converTime(e)));
+		timeSer.list().forEach(e -> list.add(convertDTO(e)));
 		LogUtil.debug(LOG, "Response list Time");
 		return list;
 	}
@@ -93,11 +93,13 @@ public class TimeController {
 	@ResponseBody
 	public TimeDTO saveTime(@RequestBody TimeDTO tim) {
 		LogUtil.debug(LOG, "Request add a new time");
-		Time time = converTime(tim);
+		tim.setTimeId(UUID.randomUUID());
 		Timestamp temp = new Timestamp(System.currentTimeMillis());
-		time.setCreateAt(temp);
-		time.setModifiedAt(temp);
+		tim.setCreateAt(temp);
+		tim.setModifiedAt(temp);
+		Time time = converTime(tim);
 		timeSer.save(time);
+		tim = convertDTO(time);
 		LogUtil.debug(LOG, "Response time " + time.toString());
 		return tim;
 	}
@@ -174,11 +176,11 @@ public class TimeController {
 	}
 	
 	//Cass to DTO
-	private TimeDTO convertCassToDTO(CassTime e) {
+	private Time convertCassToJPA(CassTime e) {
 		if(e== null) {
 			throw new NotFoundDataException("");
 		}
-		TimeDTO time = new TimeDTO();
+		Time time = new Time();
 		time.setTimeId(e.getTimeId());
 		time.setMonth(e.getMonth());
 		time.setQuarter(e.getQuarter());

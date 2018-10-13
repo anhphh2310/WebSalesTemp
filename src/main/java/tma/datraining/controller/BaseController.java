@@ -58,13 +58,13 @@ public class BaseController extends ResponseEntityExceptionHandler {
 //		return new ResponseEntity<>(res,HttpStatus.INTERNAL_SERVER_ERROR);
 //	}
 	
-	@ExceptionHandler(value= {ForbiddentException.class})
-	@ResponseStatus(HttpStatus.FORBIDDEN)
-	public ResponseEntity<ResponseMsg> forbidden(ForbiddentException ex, WebRequest re){
-		LogUtil.error(LOG,ex.getCause().toString());
-		ResponseMsg res = new ResponseMsg(HttpStatus.FORBIDDEN,ex.getMessage() + FORBIDDEN, re.getDescription(false));
-		return new ResponseEntity<>(res,HttpStatus.FORBIDDEN);
-	}
+//	@ExceptionHandler(value= {ForbiddentException.class})
+//	@ResponseStatus(HttpStatus.FORBIDDEN)
+//	public ResponseEntity<ResponseMsg> forbidden(ForbiddentException ex, WebRequest re){
+//		LogUtil.error(LOG,ex.getCause().toString());
+//		ResponseMsg res = new ResponseMsg(HttpStatus.FORBIDDEN,ex.getMessage() + FORBIDDEN, re.getDescription(false));
+//		return new ResponseEntity<>(res,HttpStatus.FORBIDDEN);
+//	}
 	
 	
 	

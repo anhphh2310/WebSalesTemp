@@ -17,47 +17,44 @@ import tma.datraining.service.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
-public class WebSecurityConfig extends WebSecurityConfigurerAdapter{
+public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
 	@Autowired
 	private UserDetailsServiceImpl userDetailsService;
-	
+
 	@Autowired
 	private DataSource dataSource;
-	
+
 	@Bean
 	public BCryptPasswordEncoder passwordEncoder() {
 		BCryptPasswordEncoder bCryptPasswordEncoder = new BCryptPasswordEncoder();
 		return bCryptPasswordEncoder;
 	}
-	
+
 	@Autowired
-	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception{
+	public void configureGlobal(AuthenticationManagerBuilder auth) throws Exception {
 		auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder());
 	}
-	
+
 	@Override
-	protected void configure(HttpSecurity http) throws Exception{
+	protected void configure(HttpSecurity http) throws Exception {
 		http.csrf().disable();
-		
-		http.authorizeRequests().antMatchers("/","/login","logout").permitAll();
-		
+
+		http.authorizeRequests().antMatchers("/", "/login", "logout").permitAll();
+
 		http.authorizeRequests().antMatchers("/userInfo").access("hasAnyRole('ROLE_USER','ROLE_ADMIN')");
-		
+
 		http.authorizeRequests().antMatchers("/admin").access("hasRole('ROLE_ADMIN')");
 		
-		http.authorizeRequests().and().formLogin()
-			.loginProcessingUrl("/j_spring_security_check")
-			.loginPage("/login")
-			.defaultSuccessUrl("/userAccountInfo")
-			.failureUrl("/login?error=true")
-			.usernameParameter("username")
-			.passwordParameter("password")
-			.and().logout().logoutUrl("/logout").logoutSuccessUrl("/logoutSuccessful");
-		http.authorizeRequests().and()
-			.rememberMe().tokenValiditySeconds(1 * 24 * 60 * 60);
+		http.authorizeRequests().and().exceptionHandling().accessDeniedPage("/403");
+		
+		http.authorizeRequests().and().formLogin().loginProcessingUrl("/j_spring_security_check").loginPage("/login")
+				.defaultSuccessUrl("/userAccountInfo").failureUrl("/login?error=true").usernameParameter("username")
+				.passwordParameter("password").and().logout().logoutUrl("/logout")
+				.logoutSuccessUrl("/logoutSuccessful");
+		http.authorizeRequests().and().rememberMe().tokenValiditySeconds(1 * 24 * 60 * 60);
 	}
-	
+
 	@Bean
 	public PersistentTokenRepository persistentTokenRepository() {
 		JdbcTokenRepositoryImpl db = new JdbcTokenRepositoryImpl();

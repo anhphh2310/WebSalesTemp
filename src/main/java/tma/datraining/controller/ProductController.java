@@ -60,11 +60,9 @@ public class ProductController {
 	@ResponseBody
 	public List<ProductDTO> convertToProduct() {
 		LogUtil.debug(LOG, "Request convert data from Cassandra");
+		cassSer.list().forEach(e -> productSer.save(convertCassToJPA(e)));
 		List<ProductDTO> list = new ArrayList<>();
-		cassSer.list().forEach(e -> list.add(convertCassToDTO(e)));
-		for (ProductDTO product : list) {
-			productSer.save(convertProduct(product));
-		}
+		productSer.list().forEach(e -> list.add(convertProductToDTO(e)));
 		LogUtil.debug(LOG, "Response list product");
 		return list;
 	}
@@ -93,22 +91,6 @@ public class ProductController {
 
 	}
 
-	@GetMapping(value = { "/cass/{productId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
-			MediaType.APPLICATION_XML_VALUE })
-	@ResponseBody
-	public CassProduct getProductCass(@PathVariable("productId") String productId) {
-		LogUtil.debug(LOG, "Request a product from Cassandra with id:" + productId);
-		CassProduct pro = null;
-		try {
-			pro = productSer.getCass(UUID.fromString(productId));
-		} catch (IllegalArgumentException e) {
-			throw new NotFoundDataException("Product Id ");
-		}
-		LogUtil.debug(LOG, "Response product "+ pro.toString());
-		return pro;
-
-	}
-
 	@GetMapping(value = { "/class/{classProduct}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
@@ -132,9 +114,10 @@ public class ProductController {
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		product.setCreateAt(time);
 		product.setModifiedAt(time);
-		Product pro = convertProduct(product);
-		productSer.save(pro);
+		Product pro = convertDTOToProduct(product);
+		UUID id = productSer.save(pro);
 		LogUtil.debug(LOG, "Reponse save a new product " + pro.toString());
+		product.setProductId(id);
 		return product;
 
 	}
@@ -159,7 +142,7 @@ public class ProductController {
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		pro.setCreateAt(productSer.get(id).getCreateAt());
 		pro.setModifiedAt(time);
-		Product product = convertProduct(pro);
+		Product product = convertDTOToProduct(pro);
 		Set<Sales> sales = new HashSet<>();
 		sales.addAll(salesSer.findByProduct(product));
 		product.setSales(sales);
@@ -212,7 +195,7 @@ public class ProductController {
 	}
 
 	// DTO to product
-	public Product convertProduct(ProductDTO product) {
+	public Product convertDTOToProduct(ProductDTO product) {
 		Product pro = null;
 		pro = new Product(product.getItem(), product.getClassProduct(), product.getInventory(), product.getCreateAt(),
 				product.getModifiedAt());
@@ -221,8 +204,8 @@ public class ProductController {
 	}
 
 	// Cass to DTO
-	public ProductDTO convertCassToDTO(CassProduct product) {
-		ProductDTO pro = new ProductDTO();
+	public Product convertCassToJPA(CassProduct product) {
+		Product pro = new Product();
 		if (product == null) {
 			throw new NotFoundDataException("");
 		}

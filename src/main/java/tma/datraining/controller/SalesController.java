@@ -58,9 +58,9 @@ public class SalesController {
 	@GetMapping(value = "/convert", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getConvert() {
+		cassSer.list().forEach(e -> salesSer.save(convertCassToJPA(e)));
 		List<SalesDTO> list = new ArrayList<>();
-		cassSer.list().forEach(e -> list.add(convertCassToDTO(e)));
-		list.forEach(e -> salesSer.save(convertSales(e)));
+		salesSer.list().forEach(e -> list.add(convertDTO(e)));
 		return list;
 	}
 
@@ -157,6 +157,7 @@ public class SalesController {
 	@PostMapping(value = { "/add" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO) {
+		saleDTO.setSalesId(UUID.randomUUID());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		saleDTO.setCreateAt(time);
 		saleDTO.setModifiedAt(time);
@@ -180,6 +181,7 @@ public class SalesController {
 		if (salesSer.get(id) == null) {
 			throw new NotFoundDataException("Sales Id ");
 		}
+		saleDTO.setSalesId(id);
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		saleDTO.setCreateAt(salesSer.get(id).getCreateAt());
 		saleDTO.setModifiedAt(time);
@@ -191,7 +193,7 @@ public class SalesController {
 	@DeleteMapping(value = { "/delete/{saleId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public void deleteSales(@PathVariable("saleId") String saleId) {
+	public String deleteSales(@PathVariable("saleId") String saleId) {
 		if(checkNullEmpty(saleId))
 			throw new NotFoundDataException("");
 		SalesDTO sales = null;
@@ -201,7 +203,7 @@ public class SalesController {
 			throw new NotFoundDataException("");
 		}
 		salesSer.delete(sales.getSalesId());
-		System.out.println("Delete sale : " + saleId);
+		return "Delete sale : " + saleId;
 	}
 	
 	//Check null empty
@@ -239,15 +241,15 @@ public class SalesController {
 	}
 
 	// Cass to DTO
-	public SalesDTO convertCassToDTO(CassSales e) {
+	public Sales convertCassToJPA(CassSales e) {
 		if (e == null) {
 			throw new NotFoundDataException("");
 		}
-		SalesDTO sales = new SalesDTO();
+		Sales sales = new Sales();
 		sales.setSalesId(UUID.randomUUID());
-		sales.setProduct(e.getProductId());
-		sales.setLocation(e.getLocationId());
-		sales.setTime(e.getTimeId());
+		sales.setProduct(proSer.get(e.getProductId()));
+		sales.setLocation(locaSer.get(e.getLocationId()));
+		sales.setTime(timeSer.get(e.getTimeId()));
 		sales.setDollars(e.getDollars());
 		sales.setCreateAt(converter.convert(e.getCreateAt()));
 		sales.setModifiedAt(converter.convert(e.getModifiedAt()));
