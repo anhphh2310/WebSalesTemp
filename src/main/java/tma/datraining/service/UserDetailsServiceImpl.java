@@ -21,9 +21,6 @@ public class UserDetailsServiceImpl implements UserDetailsService{
 
 	@Autowired
 	private UserService userService;
-
-	@Autowired 
-	private RoleService roleService;
 	
 	@Autowired
 	private UserRoleService userRoleService;

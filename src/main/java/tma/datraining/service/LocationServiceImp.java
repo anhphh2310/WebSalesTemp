@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
 import tma.datraining.model.cassandra.CassLocation;
 import tma.datraining.repository.LocationRepository;
@@ -37,6 +38,8 @@ public class LocationServiceImp implements LocationService{
 			if(location.getLocationId().equals(id))
 				loca = location;
 		}
+		if(loca == null)
+			throw new NotFoundDataException("Location id ");
 		return loca;
 	}
 
@@ -66,7 +69,6 @@ public class LocationServiceImp implements LocationService{
 
 	@Override
 	public CassLocation getCass(UUID id) {
-		// TODO Auto-generated method stub
 		CassLocation location = null;
 		location = cassRepo.findById(id).get();
 		return location;

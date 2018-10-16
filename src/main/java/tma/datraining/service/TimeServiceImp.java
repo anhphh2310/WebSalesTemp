@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Time;
 import tma.datraining.model.cassandra.CassTime;
 import tma.datraining.repository.TimeRepository;
@@ -43,6 +44,8 @@ public class TimeServiceImp implements TimeService {
 			if (tim.getTimeId().equals(id))
 				time = tim;
 		}
+		if(time == null)
+			throw new NotFoundDataException("Time id ");
 		return time;
 	}
 

@@ -1,6 +1,7 @@
 
 package tma.datraining.controller;
 
+import java.security.Principal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +22,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.SalesDTO;
+import tma.datraining.exception.ForbiddentException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
 import tma.datraining.model.Product;
@@ -156,7 +158,10 @@ public class SalesController {
 
 	@PostMapping(value = { "/add" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO) {
+	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO, Principal principal) {
+		if(principal == null) {
+			throw new ForbiddentException("Not login, ");
+		}
 		saleDTO.setSalesId(UUID.randomUUID());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		saleDTO.setCreateAt(time);
@@ -166,10 +171,13 @@ public class SalesController {
 		return saleDTO;
 	}
 
-	@PutMapping(value = { "/update/{saleId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+	@PutMapping(value = { "/update/{saleId}" }, produces = {MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO, @PathVariable("saleId") String saleId) {
+	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO, @PathVariable("saleId") String saleId, Principal principal) {
+		if(principal == null) {
+			throw new ForbiddentException("Not login, ");
+		}
 		if(checkNullEmpty(saleId))
 			throw new NotFoundDataException("");
 		UUID id = null;
@@ -193,7 +201,10 @@ public class SalesController {
 	@DeleteMapping(value = { "/delete/{saleId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public String deleteSales(@PathVariable("saleId") String saleId) {
+	public String deleteSales(@PathVariable("saleId") String saleId, Principal principal) {
+		if(principal == null) {
+			throw new ForbiddentException("Not login, ");
+		}
 		if(checkNullEmpty(saleId))
 			throw new NotFoundDataException("");
 		SalesDTO sales = null;
@@ -203,7 +214,7 @@ public class SalesController {
 			throw new NotFoundDataException("");
 		}
 		salesSer.delete(sales.getSalesId());
-		return "Delete sale : " + saleId;
+		return "Delete successful SALES{ " + saleId + "}";
 	}
 	
 	//Check null empty

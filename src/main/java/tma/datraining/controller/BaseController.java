@@ -20,9 +20,9 @@ import tma.datraining.util.LogUtil;;
 @RestControllerAdvice
 public class BaseController extends ResponseEntityExceptionHandler {
 
-	private static final String NOT_FOUND_DATA = " exist in the database.";
+	private static final String NOT_FOUND_DATA = " NOT exist in the database.";
 	private static final String BAD_REQUEST = "Wrong something in request.";
-	private static final String INTERNAL_EXCEPTION = "Internal server error.";
+//	private static final String INTERNAL_EXCEPTION = "Internal server error.";
 	private static final String FORBIDDEN = "have no permission.";
 	
 	private static final Logger LOG  = LoggerFactory.getLogger(BaseController.class);
@@ -38,7 +38,7 @@ public class BaseController extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(value = { BadRequestException.class})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	public ResponseEntity<ResponseMsg> badRequest(BadRequestException ex, WebRequest re){
-		LogUtil.error(LOG,ex.getCause().toString());
+		LogUtil.error(LOG,BAD_REQUEST);
 		ResponseMsg res = new ResponseMsg(HttpStatus.BAD_REQUEST, BAD_REQUEST, re.getDescription(false));
 		return new ResponseEntity<>(res,HttpStatus.BAD_REQUEST);
 	}
@@ -46,25 +46,25 @@ public class BaseController extends ResponseEntityExceptionHandler {
 	@ExceptionHandler(value = { ConstraintViolationException.class})
 	@ResponseStatus(HttpStatus.BAD_REQUEST)
 	public ResponseEntity<ResponseMsg> constraintViolation(BadRequestException ex, WebRequest re){
-		LogUtil.error(LOG,ex.getCause().toString());
+		LogUtil.error(LOG,BAD_REQUEST);
 		ResponseMsg res = new ResponseMsg(HttpStatus.BAD_REQUEST, BAD_REQUEST, re.getDescription(false));
 		return new ResponseEntity<>(res,HttpStatus.BAD_REQUEST);
 	}
 //	@ExceptionHandler(value= {Exception.class})
 //	@ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
 //	public ResponseEntity<ResponseMsg> unknowException(Exception ex, WebRequest re){
-////		LOG.error(ex.getCause().toString());
+//		LOG.error(INTERNAL_EXCEPTION);
 //		ResponseMsg res = new ResponseMsg(HttpStatus.INTERNAL_SERVER_ERROR, INTERNAL_EXCEPTION , re.getDescription(false));
 //		return new ResponseEntity<>(res,HttpStatus.INTERNAL_SERVER_ERROR);
 //	}
 	
-//	@ExceptionHandler(value= {ForbiddentException.class})
-//	@ResponseStatus(HttpStatus.FORBIDDEN)
-//	public ResponseEntity<ResponseMsg> forbidden(ForbiddentException ex, WebRequest re){
-//		LogUtil.error(LOG,ex.getCause().toString());
-//		ResponseMsg res = new ResponseMsg(HttpStatus.FORBIDDEN,ex.getMessage() + FORBIDDEN, re.getDescription(false));
-//		return new ResponseEntity<>(res,HttpStatus.FORBIDDEN);
-//	}
+	@ExceptionHandler(value= {ForbiddentException.class})
+	@ResponseStatus(HttpStatus.UNAUTHORIZED)
+	public ResponseEntity<ResponseMsg> forbidden(ForbiddentException ex, WebRequest re){
+		LogUtil.error(LOG,FORBIDDEN);
+		ResponseMsg res = new ResponseMsg(HttpStatus.UNAUTHORIZED,ex.getMessage() + FORBIDDEN, re.getDescription(false));
+		return new ResponseEntity<>(res,HttpStatus.UNAUTHORIZED);
+	}
 	
 	
 	

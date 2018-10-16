@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Product;
 import tma.datraining.model.cassandra.CassProduct;
 import tma.datraining.repository.ProductRepository;
@@ -47,6 +48,8 @@ public class ProductServiceImp implements ProductService{
 				pro = product;
 			}
 		}
+		if(pro == null)
+			throw new NotFoundDataException("Product id ");
 		return pro;
 	}
 

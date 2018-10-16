@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
@@ -17,8 +18,10 @@ import tma.datraining.service.UserDetailsServiceImpl;
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(securedEnabled = true)
 public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 
+	
 	@Autowired
 	private UserDetailsServiceImpl userDetailsService;
 
@@ -53,6 +56,15 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 				.passwordParameter("password").and().logout().logoutUrl("/logout")
 				.logoutSuccessUrl("/logoutSuccessful");
 		http.authorizeRequests().and().rememberMe().tokenValiditySeconds(1 * 24 * 60 * 60);
+		
+		http.httpBasic()
+	    .and()
+	    .authorizeRequests()
+	    .antMatchers("/location/add","/sales/add","/time/add","/product/add","/location/update/*","/sales/update/*","/time/update/*","/product/update/*",
+	    		"/location/delete/*","/sales/delete/*","/time/delete/*","/product/delete/*")
+	    .access("hasRole('ROLE_ADMIN')");
+		
+		
 	}
 
 	@Bean

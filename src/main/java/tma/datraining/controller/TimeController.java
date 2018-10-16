@@ -1,5 +1,6 @@
 package tma.datraining.controller;
 
+import java.security.Principal;
 import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -11,18 +12,20 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
-import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.TimeDTO;
+import tma.datraining.exception.BadRequestException;
+import tma.datraining.exception.ForbiddentException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Sales;
 import tma.datraining.model.Time;
@@ -91,8 +94,14 @@ public class TimeController {
 	@PostMapping(value = { "/add" },produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public TimeDTO saveTime(@RequestBody TimeDTO tim) {
+	public TimeDTO saveTime(@RequestBody TimeDTO tim,Principal principal) {
 		LogUtil.debug(LOG, "Request add a new time");
+		if(principal == null) {
+			throw new ForbiddentException("Not login, ");
+		}
+		if(tim.getMonth()<=0 || tim.getMonth()>12 ||tim.getQuarter()<=0 || tim.getQuarter()>4 || tim.getYear()<=0) {
+			throw new BadRequestException("");
+		}
 		tim.setTimeId(UUID.randomUUID());
 		Timestamp temp = new Timestamp(System.currentTimeMillis());
 		tim.setCreateAt(temp);
@@ -107,8 +116,11 @@ public class TimeController {
 	@PutMapping(value = { "/update/{timeId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public TimeDTO updateTime(@RequestBody TimeDTO tim,@PathVariable("timeId")String timeId) {
+	public TimeDTO updateTime(@RequestBody TimeDTO tim,@PathVariable("timeId")String timeId, Principal principal) {
 		LogUtil.debug(LOG, "Request update time with id: " + timeId);
+		if(principal == null) {
+			throw new ForbiddentException("Not login, ");
+		}
 		UUID id = null;
 		try {
 			id = UUID.fromString(timeId);
@@ -118,6 +130,9 @@ public class TimeController {
 		}
 		if(timeSer.get(id)==null) {
 			throw new NotFoundDataException("Time id");
+		}
+		if(tim.getMonth()<=0 || tim.getMonth()>12 ||tim.getQuarter()<=0 || tim.getQuarter()>4 || tim.getYear()<=0) {
+			throw new BadRequestException("");
 		}
 		Timestamp temp = new Timestamp(System.currentTimeMillis());
 		Time time = timeSer.get(id);
@@ -134,21 +149,24 @@ public class TimeController {
 		return timeDTO;
 	}
 
-	@DeleteMapping(value = { "/delete/{timeId}" },  produces = {
+	@RequestMapping(value = { "/delete/{timeId}" }, method=RequestMethod.DELETE, produces = {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public String deleteTime(@PathVariable("timeId") String timeId) {
+	public String deleteTime(@PathVariable("timeId") String timeId, Principal principal) {
 		LogUtil.debug(LOG, "Request delete time with id :" + timeId);
+		if(principal == null) {
+			throw new ForbiddentException("Not login, ");
+		}
 		TimeDTO time = null;
 		try {
 			time = convertDTO(timeSer.get(UUID.fromString(timeId)));
 		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
-		
+		salesSer.findByTime(timeSer.get(UUID.fromString(timeId))).forEach(e -> salesSer.delete(e.getSalesId()));
 		timeSer.delete(time.getTimeId());
 		LogUtil.debug(LOG, "Response delete time");
-		return "Delete success time{" + timeId + "}";
+		return "Delete success TIME{ " + timeId + "}";
 	}
 
 	//Convert
@@ -189,4 +207,6 @@ public class TimeController {
 		time.setModifiedAt(converter.convert(e.getModifiedAt()));
 		return time;
 	}
+	
+	
 }

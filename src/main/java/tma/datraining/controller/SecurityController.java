@@ -1,3 +1,4 @@
+
 package tma.datraining.controller;
 
 import java.security.Principal;
@@ -9,6 +10,7 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import tma.datraining.exception.ForbiddentException;
 import tma.datraining.util.WebUtils;
 
 @Controller
@@ -59,4 +61,45 @@ public class SecurityController {
 		}
 		return "403Page";
 	}
+	
+	@RequestMapping(value= {"/403"}, method=RequestMethod.DELETE)
+	public String accessDenied2(Model model, Principal principal) {
+		if(principal!=null) {
+			User loginUser = (User) ((Authentication) principal).getPrincipal();
+			String userInfo = WebUtils.toString(loginUser);
+			model.addAttribute("userInfo", userInfo);
+			String message = "Hi" + principal.getName() + "<br> You do not have permission to access this page";
+			model.addAttribute("message", message);
+			throw new ForbiddentException("User " + principal.getName() + " ");
+		}
+		return "403Page";
+	}
+	
+	@RequestMapping(value= {"/403"}, method=RequestMethod.POST)
+	public String accessDenied3(Model model, Principal principal) {
+		if(principal!=null) {
+			User loginUser = (User) ((Authentication) principal).getPrincipal();
+			String userInfo = WebUtils.toString(loginUser);
+			model.addAttribute("userInfo", userInfo);
+			String message = "Hi" + principal.getName() + "<br> You do not have permission to access this page";
+			model.addAttribute("message", message);
+			throw new ForbiddentException("User " + principal.getName() + " ");
+		}
+		return "403Page";
+	}
+	@RequestMapping(value= {"/403"}, method=RequestMethod.PUT)
+	public String accessDenied4(Model model, Principal principal) {
+		if(principal!=null) {
+			User loginUser = (User) ((Authentication) principal).getPrincipal();
+			String userInfo = WebUtils.toString(loginUser);
+			model.addAttribute("userInfo", userInfo);
+			String message = "Hi" + principal.getName() + "<br> You do not have permission to access this page";
+			model.addAttribute("message", message);
+			throw new ForbiddentException("User " + principal.getName() + " ");
+		}
+		return "403Page";
+	}
+	
+	
+	
 }
