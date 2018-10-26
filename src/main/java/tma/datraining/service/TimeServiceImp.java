@@ -39,11 +39,7 @@ public class TimeServiceImp implements TimeService {
 
 	@Override
 	public Time get(UUID id) {
-		Time time = null;
-		for (Time tim : list()) {
-			if (tim.getTimeId().equals(id))
-				time = tim;
-		}
+		Time time = timeRepository.findByTimeId(id);
 		if(time == null)
 			throw new NotFoundDataException("Time id ");
 		return time;
@@ -90,6 +86,24 @@ public class TimeServiceImp implements TimeService {
 	public void deleteCass(UUID id) {
 		// TODO Auto-generated method stub
 		cassRepo.delete(cassRepo.findById(id).get());
+	}
+
+	@Override
+	public List<Time> findByMonth(int month) {
+		List<Time> list = timeRepository.findByMonth(month);
+		return list;
+	}
+
+	@Override
+	public List<Time> findByYear(int year) {
+		List<Time> list = timeRepository.findByYear(year);
+		return list;
+	}
+
+	@Override
+	public List<Time> findByQuarter(int quarter) {
+		List<Time> list = timeRepository.findByQuarter(quarter);
+		return list;
 	}
 
 }

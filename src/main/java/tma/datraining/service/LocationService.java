@@ -27,4 +27,9 @@ public interface LocationService {
 	void delete(UUID id);
 	
 	void deleteCass(UUID id);
+	
+	List<Location> findByCity(String city);
+	
+	List<Location> findByCountry(String country);
+	
 }

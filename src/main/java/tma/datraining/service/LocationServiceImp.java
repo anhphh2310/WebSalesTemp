@@ -34,10 +34,7 @@ public class LocationServiceImp implements LocationService{
 	@Override
 	public Location get(UUID id) {
 		Location loca = null;
-		for (Location  location : list()) {
-			if(location.getLocationId().equals(id))
-				loca = location;
-		}
+		loca = locationRepo.findByLocationId(id);
 		if(loca == null)
 			throw new NotFoundDataException("Location id ");
 		return loca;
@@ -91,6 +88,18 @@ public class LocationServiceImp implements LocationService{
 	public void deleteCass(UUID id) {
 		// TODO Auto-generated method stub
 		cassRepo.delete(cassRepo.findById(id).get());
+	}
+
+	@Override
+	public List<Location> findByCity(String city) {
+		List<Location> list = locationRepo.findByCity(city);
+		return list;
+	}
+
+	@Override
+	public List<Location> findByCountry(String country) {
+		List<Location> list = locationRepo.findByCountry(country);
+		return list;
 	}
 
 

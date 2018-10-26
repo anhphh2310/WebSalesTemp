@@ -1,6 +1,6 @@
 package tma.datraining.util;
 
-import org.slf4j.Logger;
+import org.apache.logging.log4j.Logger;
 
 public class LogUtil {
 	public static void debug(Logger log, String msg) {

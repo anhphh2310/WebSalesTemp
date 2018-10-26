@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
 import tma.datraining.model.Product;
 import tma.datraining.model.Sales;
@@ -41,10 +42,9 @@ public class SalesServiceImp implements SalesService{
 
 	@Override
 	public Sales get(UUID id) {
-		Sales sales = null;
-		for (Sales sale : list()) {
-			if(sale.getSalesId().equals(id))
-				sales = sale;
+		Sales sales = salesRepo.findBySalesId(id);
+		if(sales == null) {
+			throw new NotFoundDataException("");
 		}
 		return sales;
 	}

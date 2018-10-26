@@ -27,5 +27,9 @@ public interface ProductService {
 	void delete(UUID id);
 	
 	void deleteCass(UUID id);
-	List<Product> findByClassProduct(String classProduct);
+	
+	Product findByClassProduct(String classProduct);
+	
+	List<Product> findByInventory(String inventory);
+	
 }

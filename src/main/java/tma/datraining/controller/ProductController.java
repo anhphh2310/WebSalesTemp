@@ -9,8 +9,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -55,63 +55,67 @@ public class ProductController {
 	@Autowired
 	private DateTimeToTimestampConverter converter;
 
-	private static final Logger LOG = LoggerFactory.getLogger(ProductController.class);
+	private static final Logger LOG = LogManager.getLogger(ProductController.class);
 
 	@RequestMapping(value = { "/convert" }, method = RequestMethod.GET, produces = { "application/json",
 			"application/xml" })
 	@ResponseBody
 	public List<ProductDTO> convertToProduct() {
-		LogUtil.debug(LOG, "Request convert data from Cassandra");
+		LogUtil.info(LOG, "Request convert data from Cassandra.");
 		cassSer.list().forEach(e -> productSer.save(convertCassToJPA(e)));
 		List<ProductDTO> list = new ArrayList<>();
 		productSer.list().forEach(e -> list.add(convertProductToDTO(e)));
-		LogUtil.debug(LOG, "Response list product");
 		return list;
 	}
 
 	@GetMapping(value = "/list", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<ProductDTO> getProducts() {
-		LogUtil.debug(LOG, "Request list product");
+		LogUtil.info(LOG, "Request list product.");
 		List<ProductDTO> list = convertDTOList(productSer.list());
-		LogUtil.debug(LOG, "Response list Product");
 		return list;
 	}
 
 	@GetMapping(value = "/{productId}", produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	public ResponseEntity<ProductDTO> getProduct(@PathVariable("productId") String productId) {
-		LogUtil.debug(LOG, "Request product with id :" + productId);
+		LogUtil.info(LOG, "Request product with id :" + productId + ".");
 		ProductDTO pro = null;
 		try {
 			pro = convertProductToDTO(productSer.get(UUID.fromString(productId)));
 		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("Product Id ");
 		}
-		LogUtil.debug(LOG, "Response product " + pro.toString());
+		LogUtil.info(LOG, "Response product " + pro.toString());
 		return new ResponseEntity<>(pro, HttpStatus.OK);
+
+	}
+
+	@GetMapping(value = "/inventory/{inventory}", produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	public ResponseEntity<List<ProductDTO>> getProductsByInventory(@PathVariable("inventory") String inventory) {
+		LogUtil.info(LOG, "Request get products by inventory :" + inventory + ".");
+		List<Product> list = productSer.findByInventory(inventory);
+		List<ProductDTO> listResult = new ArrayList<>();
+		list.forEach(e -> listResult.add(convertProductToDTO(e)));
+		return new ResponseEntity<>(listResult, HttpStatus.OK);
 
 	}
 
 	@GetMapping(value = { "/class/{classProduct}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public List<ProductDTO> getProductByClass(@PathVariable("classProduct") String classProduct) {
-		LogUtil.debug(LOG, "Request product with class :" + classProduct);
-		List<Product> pro = productSer.findByClassProduct(classProduct);
-		List<ProductDTO> pr = convertDTOList(pro);
-		LogUtil.debug(LOG, "Reponse product " + pro.toString());
+	public ProductDTO getProductByClass(@PathVariable("classProduct") String classProduct) {
+		LogUtil.info(LOG, "Request product with class :" + classProduct + ".");
+		Product pro = productSer.findByClassProduct(classProduct);
+		ProductDTO pr = convertProductToDTO(pro);
 		return pr;
 
 	}
 
 	@PostMapping(value = { "/add" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public ProductDTO addProduct(@RequestBody ProductDTO product,Principal principal) throws URISyntaxException {
-		LogUtil.debug(LOG, "Add a new product");
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
+	public ProductDTO addProduct(@RequestBody ProductDTO product, Principal principal) throws URISyntaxException {
 		if (check(product.getClassProduct()) || check(product.getInventory())) {
 			throw new BadRequestException("");
 		}
@@ -121,42 +125,34 @@ public class ProductController {
 		product.setModifiedAt(time);
 		Product pro = convertDTOToProduct(product);
 		UUID id = productSer.save(pro);
-		LogUtil.debug(LOG, "Reponse save a new product " + pro.toString());
 		product.setProductId(id);
+		LogUtil.info(LOG, "Request add a new product "+ product.toString() + ".");
 		return product;
 
 	}
 
-	@PutMapping(value = { "/update/{productId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
-			MediaType.APPLICATION_XML_VALUE })
+	@PutMapping(value = { "/update" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public ProductDTO updateProduct(@RequestBody ProductDTO pro, @PathVariable("productId") String productId, Principal principal) {
-		LogUtil.debug(LOG, "Request update a product with id :" + productId);
-		if(principal == null) {
+	public ProductDTO updateProduct(@RequestBody ProductDTO pro, Principal principal) {
+		if (principal == null) {
 			throw new ForbiddentException("Not login, ");
 		}
-		UUID id = null;
-		try {
-			id = UUID.fromString(productId);
-		} catch (IllegalArgumentException e) {
-			throw new NotFoundDataException("Product Id");
-		}
-		if (pro.getItem() <= 0 || check(pro.getClassProduct()) || check(pro.getInventory()) ) {
+		if (pro.getItem() <= 0 || check(pro.getClassProduct()) || check(pro.getInventory())) {
 			throw new BadRequestException("");
 		}
-		if (productSer.get(id) == null) {
+		if (productSer.get(pro.getProductId()) == null) {
 			throw new NotFoundDataException("Product Id ");
 		}
-		pro.setProductId(id);
+		pro.setProductId(pro.getProductId());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
-		pro.setCreateAt(productSer.get(id).getCreateAt());
+		pro.setCreateAt(productSer.get(pro.getProductId()).getCreateAt());
 		pro.setModifiedAt(time);
 		Product product = convertDTOToProduct(pro);
 		Set<Sales> sales = new HashSet<>();
 		sales.addAll(salesSer.findByProduct(product));
 		product.setSales(sales);
 		productSer.update(product.getProductId(), product);
-		LogUtil.debug(LOG, "Response update a product " + product.toString());
+		LogUtil.info(LOG, "Request update a product with id :" + pro.getProductId());
 		return pro;
 	}
 
@@ -164,8 +160,7 @@ public class ProductController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public String deleteProduct(@PathVariable("productId") String productId, Principal principal) {
-		LogUtil.debug(LOG, "Delete product with id :" + productId);
-		if(principal == null) {
+		if (principal == null) {
 			throw new ForbiddentException("Not login, ");
 		}
 		ProductDTO pro = null;
@@ -175,11 +170,11 @@ public class ProductController {
 			throw new NotFoundDataException("No data found!");
 		}
 		List<Sales> list = salesSer.findByProduct(productSer.get(UUID.fromString(productId)));
-		if(list.size()>0) {
+		if (list.size() > 0) {
 			list.forEach(e -> salesSer.delete(e.getSalesId()));
 		}
 		productSer.delete(pro.getProductId());
-		LogUtil.debug(LOG, "Response delete product with id :" + productId);
+		LogUtil.info(LOG, "Delete product with id :" + productId + ".");
 		return "Delete success PRODUCT{ " + productId + "}";
 	}
 

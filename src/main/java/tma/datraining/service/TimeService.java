@@ -27,4 +27,11 @@ public interface TimeService {
 	void delete(UUID id);
 	
 	void deleteCass(UUID id);
+	
+	List<Time> findByMonth(int month);
+	
+	List<Time> findByYear(int year);
+	
+	List<Time> findByQuarter(int quarter);
+	
 }

@@ -8,9 +8,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.LogManager;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -26,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.LocationDTO;
 import tma.datraining.exception.BadRequestException;
-import tma.datraining.exception.ForbiddentException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
 import tma.datraining.model.Sales;
@@ -52,51 +50,69 @@ public class LocationController {
 	@Autowired
 	private DateTimeToTimestampConverter converter;
 	
-	private static final Logger LOG = LoggerFactory.getLogger(LocationController.class);
+	private static final Logger LOG = LogManager.getLogger(LocationController.class);
 	
 	@GetMapping(value = "/convert", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<LocationDTO> getConvertLocations() {
-		LogUtil.debug(LOG, "Request convert from Cassandra.");
+		LogUtil.info(LOG, "Request convert from Cassandra.");
 		cassSer.list().forEach(e -> locaSer.save(convertCassToJPA(e)));
 		List<LocationDTO> list = new ArrayList<>();
 		locaSer.list().forEach(e -> list.add(convertDTO(e)));
-		LogUtil.debug(LOG, "Response convert from Cassandra.");
 		return list;
 	}
 
 	@GetMapping(value = "/list", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public List<LocationDTO> getLocations() {
-		LogUtil.debug(LOG, "Request list Location.");
+	public List<LocationDTO> getAllLocations() {
+		LogUtil.info(LOG, "Request list Location.");
 		List<LocationDTO> list = new ArrayList<>();
 		locaSer.list().forEach(e -> list.add(convertDTO(e)));
-		LogUtil.debug(LOG, "Response list Location.");
+		LogUtil.info(LOG, "Response list Location.");
 		return list;
 	}
 
+	@GetMapping(value = { "/city/{city}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<LocationDTO> getLocationsByCity(@PathVariable("city") String city) {
+		LogUtil.info(LOG, "Request get locations by city: " + city + ".");
+		List<Location> list = locaSer.findByCity(city);
+		List<LocationDTO> listResult = new ArrayList<>();
+		list.forEach(e -> listResult.add(convertDTO(e)));
+		return listResult;
+	}
+	
+	@GetMapping(value = { "/country/{country}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<LocationDTO> getLocationsByCountry(@PathVariable("country") String country) {
+		LogUtil.info(LOG, "Request get locations by country: " + country + ".");
+		List<Location> list = locaSer.findByCountry(country);
+		List<LocationDTO> listResult = new ArrayList<>();
+		list.forEach(e -> listResult.add(convertDTO(e)));
+		return listResult;
+	}
+	
 	@GetMapping(value = { "/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public LocationDTO getLocation(@PathVariable("locationId") String locationId) {
-		LogUtil.debug(LOG, "Request get Location by Id.");
+		LogUtil.info(LOG, "Request get location with id: " + locationId + ".");
 		LocationDTO loca = null;
 		try {
 			loca = convertDTO(locaSer.get(UUID.fromString(locationId)));
 		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("Location Id");
 		}
-		LogUtil.debug(LOG, "Response get Location by Id.");
 		return loca;
 	}
 
 	@PostMapping(value = { "/add" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public LocationDTO saveLocation(@RequestBody LocationDTO location,Principal principal) {
-		LogUtil.debug(LOG, "Request add a new Location.");
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
+		LogUtil.info(LOG, "Request add a new location.");
+		
 		if (check(location.getCity()) || check(location.getCountry())) {
 			throw new BadRequestException("");
 		}
@@ -106,42 +122,32 @@ public class LocationController {
 		location.setModifiedAt(time);
 		Location loca = convertLocation(location);
 		locaSer.save(loca);
-		LogUtil.debug(LOG, "Response add a new Location.");
 		return location;
 	}
 
-	@PutMapping(value = { "/update/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+	@PutMapping(value = { "/update" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public LocationDTO updateLocation(@RequestBody LocationDTO location,
-			@PathVariable("locationId") String locationId,Principal principal) {
-		LogUtil.debug(LOG, "Request update Location with id: " + locationId + ".");
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
-		UUID id = null;
-		try {
-			id = UUID.fromString(locationId);
-		} catch (IllegalArgumentException e) {
-			throw new NotFoundDataException("Location Id");
-		}
+	public LocationDTO updateLocation(@RequestBody LocationDTO location
+			) {
+		LogUtil.info(LOG, "Request update Location with id: " + location.getLocationId() + ".");
+		
 		if (check(location.getCity()) || check(location.getCountry())) {
 			throw new BadRequestException("");
 		}
 
-		if (locaSer.get(id) == null) {
+		if (locaSer.get(location.getLocationId()) == null) {
 			throw new NotFoundDataException("Location Id");
 		}
-		location.setLocationId(id);
+		location.setLocationId(location.getLocationId());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
-		location.setCreateAt(locaSer.get(id).getCreateAt());
+		location.setCreateAt(locaSer.get(location.getLocationId()).getCreateAt());
 		location.setModifiedAt(time);
 		Location loca = convertLocation(location);
 		Set<Sales> sales = new HashSet<>();
 		sales.addAll(salesSer.findByLocation(loca));
 		loca.setSales(sales);
 		locaSer.update(loca.getLocationId(), loca);
-		LogUtil.debug(LOG, "Response update a new Location with id: " + locationId + ".");
 		return location;
 	}
 
@@ -149,10 +155,8 @@ public class LocationController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public String deleteLocation(@PathVariable("locationId") String locationId,Principal principal) {
-		LogUtil.debug(LOG, "Request delete a Location with id: " + locationId + ".");
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
+		LogUtil.info(LOG, "Request delete a location with id: " + locationId + ".");
+		
 		LocationDTO loca = null;
 		try {
 			loca = convertDTO(locaSer.get(UUID.fromString(locationId)));
@@ -161,7 +165,6 @@ public class LocationController {
 		}
 		salesSer.findByLocation(locaSer.get(UUID.fromString(locationId))).forEach(e -> salesSer.delete(e.getSalesId()));
 		locaSer.delete(loca.getLocationId());
-		LogUtil.debug(LOG, "Response delete a Location with id: " + locationId + ".");
 		return "Delete successfull LOCATION{ " + locationId + "}";
 	}
 

@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -22,7 +24,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.SalesDTO;
-import tma.datraining.exception.ForbiddentException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
 import tma.datraining.model.Product;
@@ -34,6 +35,7 @@ import tma.datraining.service.ProductService;
 import tma.datraining.service.SalesService;
 import tma.datraining.service.TimeService;
 import tma.datraining.service.cassandra.CassSalesService;
+import tma.datraining.util.LogUtil;
 
 @RestController
 @RequestMapping("/sales")
@@ -56,21 +58,28 @@ public class SalesController {
 
 	@Autowired
 	private DateTimeToTimestampConverter converter;
-
+	
+	private Logger LOG = LogManager.getLogger(SalesController.class);
+//	private static final Logger LOG = LoggerFactory.getLogger(SalesController.class);
+	
 	@GetMapping(value = "/convert", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getConvert() {
+		LogUtil.debug(LOG, "Request convert data from Cassandra.");
 		cassSer.list().forEach(e -> salesSer.save(convertCassToJPA(e)));
 		List<SalesDTO> list = new ArrayList<>();
 		salesSer.list().forEach(e -> list.add(convertDTO(e)));
+		LogUtil.debug(LOG, "Response convert data form Cassandra.");
 		return list;
 	}
 
 	@GetMapping(value = { "/list" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getSales() {
+		LogUtil.debug(LOG, "Request list data from Postgresql.");
 		List<SalesDTO> list = new ArrayList<>();
 		salesSer.list().forEach(e -> list.add(convertDTO(e)));
+		LogUtil.debug(LOG, "Response list data from Postgresql.");
 		return list;
 	}
 
@@ -85,6 +94,7 @@ public class SalesController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public SalesDTO getSale(@PathVariable("saleId") String saleId) {
+		LogUtil.debug(LOG, "Request get sale with id: " + saleId + ".");
 		if(checkNullEmpty(saleId))
 			throw new NotFoundDataException("");
 		SalesDTO sales = null;
@@ -93,6 +103,7 @@ public class SalesController {
 		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
+		LogUtil.debug(LOG, "Response get sale with id: " + saleId + ".");
 		return sales;
 	}
 
@@ -100,6 +111,7 @@ public class SalesController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getSaleByProduct(@PathVariable("productId") String productId) {
+		LogUtil.debug(LOG, "Request get sales by product with id: " + productId + ".");
 		if(checkNullEmpty(productId))
 			throw new NotFoundDataException("");
 		Product pro = null;
@@ -113,6 +125,7 @@ public class SalesController {
 		}
 		List<SalesDTO> sales = new ArrayList<>();
 		salesSer.findByProduct(pro).forEach(e -> sales.add(convertDTO(e)));
+		LogUtil.debug(LOG, "Response get sales by product with id: " + productId + ".");
 		return sales;
 	}
 
@@ -120,6 +133,7 @@ public class SalesController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getSaleByLocation(@PathVariable("locationId") String locationId) {
+		LogUtil.debug(LOG, "Request convert data from Cassandra.");
 		if(checkNullEmpty(locationId))
 			throw new NotFoundDataException("");
 		Location location = null;
@@ -133,6 +147,7 @@ public class SalesController {
 		}
 		List<SalesDTO> sales = new ArrayList<>();
 		salesSer.findByLocation(location).forEach(e -> sales.add(convertDTO(e)));
+		LogUtil.debug(LOG, "Response convert data form Cassandra.");
 		return sales;
 	}
 
@@ -159,9 +174,7 @@ public class SalesController {
 	@PostMapping(value = { "/add" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO, Principal principal) {
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
+		
 		saleDTO.setSalesId(UUID.randomUUID());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		saleDTO.setCreateAt(time);
@@ -171,27 +184,17 @@ public class SalesController {
 		return saleDTO;
 	}
 
-	@PutMapping(value = { "/update/{saleId}" }, produces = {MediaType.APPLICATION_JSON_VALUE,
+	@PutMapping(value = { "/update}" }, produces = {MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO, @PathVariable("saleId") String saleId, Principal principal) {
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
-		if(checkNullEmpty(saleId))
-			throw new NotFoundDataException("");
-		UUID id = null;
-		try {
-			id = UUID.fromString(saleId);
-		} catch (IllegalArgumentException e) {
-			throw new NotFoundDataException("Sales Id");
-		}
-		if (salesSer.get(id) == null) {
+	public SalesDTO updateSales(@RequestBody SalesDTO saleDTO, Principal principal) {
+		
+		if (salesSer.get(saleDTO.getSalesId()) == null) {
 			throw new NotFoundDataException("Sales Id ");
 		}
-		saleDTO.setSalesId(id);
+		saleDTO.setSalesId(saleDTO.getSalesId());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
-		saleDTO.setCreateAt(salesSer.get(id).getCreateAt());
+		saleDTO.setCreateAt(salesSer.get(saleDTO.getSalesId()).getCreateAt());
 		saleDTO.setModifiedAt(time);
 		Sales sale = convertSales(saleDTO);
 		salesSer.save(sale);
@@ -202,9 +205,7 @@ public class SalesController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public String deleteSales(@PathVariable("saleId") String saleId, Principal principal) {
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
+		
 		if(checkNullEmpty(saleId))
 			throw new NotFoundDataException("");
 		SalesDTO sales = null;

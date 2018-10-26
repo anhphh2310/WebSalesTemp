@@ -37,10 +37,10 @@ public class MainController {
 	@RequestMapping("/home")
 	@ResponseBody
 	public String getMainPage() {
-		if (flag == false) {
+		//if (flag == false) {
 //			autoCreate();
-		flag = true;
-		}
+	//	flag = true;
+		//}
 		return "Welcome to WebSales";
 	}
 
@@ -57,7 +57,6 @@ public class MainController {
 		UUID idL9 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "CANADA", "Ottawa City"));
 		UUID idL10 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "AUSTRALIA", "Canbera City"));
 		UUID idL11 = cassLocaSer.saveCass(new CassLocation(UUID.randomUUID(), "SPAIN", "Madrid City"));
-
 		// Product
 
 		UUID idP1 = cassProductSer.saveCass(new CassProduct(UUID.randomUUID(), 100, "CREEN", "Inv-1"));

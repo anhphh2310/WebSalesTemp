@@ -8,8 +8,8 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -25,7 +25,6 @@ import org.springframework.web.bind.annotation.RestController;
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.TimeDTO;
 import tma.datraining.exception.BadRequestException;
-import tma.datraining.exception.ForbiddentException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Sales;
 import tma.datraining.model.Time;
@@ -51,17 +50,16 @@ public class TimeController {
 	@Autowired
 	private DateTimeToTimestampConverter converter;
 	
-	private static final Logger LOG = LoggerFactory.getLogger(TimeController.class);
+	private static final Logger LOG = LogManager.getLogger(TimeController.class);
 	
 	@GetMapping(value="/convert",produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<TimeDTO> getConvertTime(){
-		LogUtil.debug(LOG, "Request convert data from Cassandra");
+		LogUtil.info(LOG, "Request convert data from Cassandra");
 		cassSer.list().forEach(e -> timeSer.save(convertCassToJPA(e)));
 		List<TimeDTO> list = new ArrayList<>();
 		timeSer.list().forEach(e -> list.add(convertDTO(e)));
-		LogUtil.debug(LOG, "Response list Time");
 		return list;
 	}
 	
@@ -69,10 +67,9 @@ public class TimeController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<TimeDTO> getTimes() {
-		LogUtil.debug(LOG, "Request list Time");
+		LogUtil.info(LOG, "Request list Time");
 		List<TimeDTO> list = new ArrayList<>();
 		timeSer.list().forEach(e->list.add(convertDTO(e)));
-		LogUtil.debug(LOG, "Response list Time");
 		return list;
 	}
 
@@ -80,25 +77,40 @@ public class TimeController {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public TimeDTO getTime(@PathVariable("timeId") String timeId) {
-		LogUtil.debug(LOG, "Request product with id: " + timeId);
+		LogUtil.info(LOG, "Request time with id: " + timeId);
 		TimeDTO time = null;
 		try {
 			time = convertDTO(timeSer.get(UUID.fromString(timeId)));
 		} catch (IllegalArgumentException e) {
 			throw new NotFoundDataException("");
 		}
-		LogUtil.debug(LOG, "Response time " + time.toString());
 		return time;
+	}
+	
+	@GetMapping(value = { "/year/{year}" }, produces = {
+			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<TimeDTO> getTimesByYear(@PathVariable("year") String year) {
+		LogUtil.info(LOG, "Request time by year: " + year);
+		int numYear = 0;
+		try {
+			numYear = Integer.parseInt(year);
+		}
+		catch(NumberFormatException | NullPointerException e) {
+			throw new NotFoundDataException("");
+		}
+		List<Time> list = timeSer.findByYear(numYear);
+		List<TimeDTO> listResult = new ArrayList<>();
+		list.forEach(e -> listResult.add(convertDTO(e)));
+		return listResult;
 	}
 
 	@PostMapping(value = { "/add" },produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public TimeDTO saveTime(@RequestBody TimeDTO tim,Principal principal) {
-		LogUtil.debug(LOG, "Request add a new time");
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
+		LogUtil.info(LOG, "Request add a new time");
+		
 		if(tim.getMonth()<=0 || tim.getMonth()>12 ||tim.getQuarter()<=0 || tim.getQuarter()>4 || tim.getYear()<=0) {
 			throw new BadRequestException("");
 		}
@@ -109,33 +121,23 @@ public class TimeController {
 		Time time = converTime(tim);
 		timeSer.save(time);
 		tim = convertDTO(time);
-		LogUtil.debug(LOG, "Response time " + time.toString());
 		return tim;
 	}
 
-	@PutMapping(value = { "/update/{timeId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+	@PutMapping(value = { "/update" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public TimeDTO updateTime(@RequestBody TimeDTO tim,@PathVariable("timeId")String timeId, Principal principal) {
-		LogUtil.debug(LOG, "Request update time with id: " + timeId);
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
-		UUID id = null;
-		try {
-			id = UUID.fromString(timeId);
-		}
-		catch (IllegalArgumentException e) {
-			throw new NotFoundDataException("Time id");
-		}
-		if(timeSer.get(id)==null) {
+	public TimeDTO updateTime(@RequestBody TimeDTO tim, Principal principal) {
+		LogUtil.info(LOG, "Request update time with id: " + tim.getTimeId());
+		
+		if(timeSer.get(tim.getTimeId())==null) {
 			throw new NotFoundDataException("Time id");
 		}
 		if(tim.getMonth()<=0 || tim.getMonth()>12 ||tim.getQuarter()<=0 || tim.getQuarter()>4 || tim.getYear()<=0) {
 			throw new BadRequestException("");
 		}
 		Timestamp temp = new Timestamp(System.currentTimeMillis());
-		Time time = timeSer.get(id);
+		Time time = timeSer.get(tim.getTimeId());
 		time.setMonth(tim.getMonth());
 		time.setQuarter(tim.getQuarter());
 		time.setYear(tim.getYear());
@@ -145,7 +147,6 @@ public class TimeController {
 		time.setSales(sales);
 		timeSer.update(time.getTimeId(), time);
 		TimeDTO timeDTO = convertDTO(timeSer.get(time.getTimeId()));
-		LogUtil.debug(LOG, "Response time " + time.toString());
 		return timeDTO;
 	}
 
@@ -153,10 +154,8 @@ public class TimeController {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public String deleteTime(@PathVariable("timeId") String timeId, Principal principal) {
-		LogUtil.debug(LOG, "Request delete time with id :" + timeId);
-		if(principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
+		LogUtil.info(LOG, "Request delete time with id :" + timeId);
+		
 		TimeDTO time = null;
 		try {
 			time = convertDTO(timeSer.get(UUID.fromString(timeId)));
@@ -165,7 +164,6 @@ public class TimeController {
 		}
 		salesSer.findByTime(timeSer.get(UUID.fromString(timeId))).forEach(e -> salesSer.delete(e.getSalesId()));
 		timeSer.delete(time.getTimeId());
-		LogUtil.debug(LOG, "Response delete time");
 		return "Delete success TIME{ " + timeId + "}";
 	}
 

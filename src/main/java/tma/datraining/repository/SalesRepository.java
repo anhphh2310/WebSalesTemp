@@ -12,6 +12,8 @@ import tma.datraining.model.Time;
 
 public interface SalesRepository extends CrudRepository<Sales, UUID> {
 
+	Sales findBySalesId(UUID salesId);
+	
 	List<Sales> findByProduct(Product product);
 
 	List<Sales> findByLocation(Location location);

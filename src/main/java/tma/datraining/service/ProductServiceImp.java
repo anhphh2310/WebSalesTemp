@@ -41,13 +41,14 @@ public class ProductServiceImp implements ProductService{
 	public Product get(UUID id) {
 		// TODO Auto-generated method stub
 		Product pro = null;
-		List<Product> list = new ArrayList<>();
-		productRepo.findAll().forEach(e ->list.add(e));
-		for (Product product : list) {
-			if(product.getProductId().toString().equals(id.toString())) {
-				pro = product;
-			}
-		}
+//		List<Product> list = new ArrayList<>();
+//		productRepo.findAll().forEach(e ->list.add(e));
+//		for (Product product : list) {
+//			if(product.getProductId().toString().equals(id.toString())) {
+//				pro = product;
+//			}
+//		}
+		pro = productRepo.findByProductId(id);
 		if(pro == null)
 			throw new NotFoundDataException("Product id ");
 		return pro;
@@ -66,10 +67,10 @@ public class ProductServiceImp implements ProductService{
 	}
 
 	@Override
-	public List<Product> findByClassProduct(String classProduct) {
-		List<Product> list = null;
-		list = productRepo.findByClassProduct(classProduct);
-		return list;
+	public Product findByClassProduct(String classProduct) {
+		Product product = new Product();
+		product = productRepo.findByClassProduct(classProduct);
+		return product;
 	}
 
 	@Override
@@ -102,6 +103,12 @@ public class ProductServiceImp implements ProductService{
 	public void deleteCass(UUID id) {
 		// TODO Auto-generated method stub
 		cassRepo.delete(cassRepo.findById(id).get());
+	}
+
+	@Override
+	public List<Product> findByInventory(String inventory) {
+		List<Product> list = productRepo.findByInventory(inventory);
+		return list;
 	}
 
 }
