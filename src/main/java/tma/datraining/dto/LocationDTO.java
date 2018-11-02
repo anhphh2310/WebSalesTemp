@@ -55,4 +55,11 @@ public class LocationDTO {
 		this.modifiedAt = modifiedAt;
 	}
 
+	@Override
+	public String toString() {
+		return "LocationDTO [locationId=" + locationId + ", country=" + country + ", city=" + city + ", createAt="
+				+ createAt + ", modifiedAt=" + modifiedAt + "]";
+	}
+
+	
 }

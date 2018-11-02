@@ -9,9 +9,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.querydsl.binding.QuerydslPredicate;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -26,12 +27,15 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.querydsl.core.types.Predicate;
+
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.ProductDTO;
 import tma.datraining.exception.BadRequestException;
-import tma.datraining.exception.ForbiddentException;
 import tma.datraining.exception.NotFoundDataException;
+import tma.datraining.model.Location;
 import tma.datraining.model.Product;
+import tma.datraining.model.QProduct;
 import tma.datraining.model.Sales;
 import tma.datraining.model.cassandra.CassProduct;
 import tma.datraining.service.ProductService;
@@ -75,7 +79,7 @@ public class ProductController {
 		List<ProductDTO> list = convertDTOList(productSer.list());
 		return list;
 	}
-
+	
 	@GetMapping(value = "/{productId}", produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	public ResponseEntity<ProductDTO> getProduct(@PathVariable("productId") String productId) {
@@ -124,8 +128,7 @@ public class ProductController {
 		product.setCreateAt(time);
 		product.setModifiedAt(time);
 		Product pro = convertDTOToProduct(product);
-		UUID id = productSer.save(pro);
-		product.setProductId(id);
+		productSer.save(pro);
 		LogUtil.info(LOG, "Request add a new product "+ product.toString() + ".");
 		return product;
 
@@ -134,16 +137,12 @@ public class ProductController {
 	@PutMapping(value = { "/update" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public ProductDTO updateProduct(@RequestBody ProductDTO pro, Principal principal) {
-		if (principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
 		if (pro.getItem() <= 0 || check(pro.getClassProduct()) || check(pro.getInventory())) {
 			throw new BadRequestException("");
 		}
 		if (productSer.get(pro.getProductId()) == null) {
 			throw new NotFoundDataException("Product Id ");
 		}
-		pro.setProductId(pro.getProductId());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		pro.setCreateAt(productSer.get(pro.getProductId()).getCreateAt());
 		pro.setModifiedAt(time);
@@ -160,9 +159,6 @@ public class ProductController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public String deleteProduct(@PathVariable("productId") String productId, Principal principal) {
-		if (principal == null) {
-			throw new ForbiddentException("Not login, ");
-		}
 		ProductDTO pro = null;
 		try {
 			pro = convertProductToDTO(productSer.get(UUID.fromString(productId)));
@@ -178,6 +174,81 @@ public class ProductController {
 		return "Delete success PRODUCT{ " + productId + "}";
 	}
 
+	//DSL
+		@GetMapping(value = "/queryDsl/{id}", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+		@ResponseBody
+		public ProductDTO getProducTByQueryDsl(@PathVariable("id") String id) {
+			LogUtil.info(LOG, "Request get product by queryDsl.");
+			QProduct qProduct = QProduct.product;
+			Predicate predicate; 
+			try{ predicate = qProduct.productId.eq(UUID.fromString(id));}
+			catch(IllegalArgumentException e) {
+				throw new NotFoundDataException("Product id ");
+			}
+			Product product = productSer.getProductByQueryDsl(predicate);
+			ProductDTO result = convertProductToDTO(product);
+			return result;
+		}
+		
+		@GetMapping(value = "/list/queryDsl", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+		@ResponseBody
+		public List<ProductDTO> getProductsByQueryDsl(@QuerydslPredicate(root=Product.class) Predicate predicate) {
+			LogUtil.info(LOG, "Request list product by queryDsl.");
+			List<Product> list = productSer.getProductsByQueryDsl(predicate);
+			List<ProductDTO> result = new ArrayList<>();
+			list.forEach(e -> result.add(convertProductToDTO(e)));
+			return result;
+		}
+		
+		@GetMapping(value = "/list/queryDsl/class", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+		@ResponseBody
+		public List<ProductDTO> getProductsByQueryDslSortClass() {
+			LogUtil.info(LOG, "Request list product sorting by class.");
+			List<Product> list = productSer.getProductsByQueryDslSortClass();
+			List<ProductDTO> result = new ArrayList<>();
+			list.forEach(e -> result.add(convertProductToDTO(e)));
+			return result;
+		}
+		
+		@GetMapping(value = "/list/queryDsl/inventory", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+		@ResponseBody
+		public List<ProductDTO> getProductsByQueryDslSortInventory() {
+			LogUtil.info(LOG, "Request list product sorting by class.");
+			List<Product> list = productSer.getProductsByQueryDslSortInventory();
+			List<ProductDTO> result = new ArrayList<>();
+			list.forEach(e -> result.add(convertProductToDTO(e)));
+			return result;
+		}
+		
+		@PutMapping(value = { "/queryDsl/update" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+		@ResponseBody
+		public ProductDTO updateProductByQueryDsl(@RequestBody ProductDTO pro) {
+			if (pro.getItem() <= 0 || check(pro.getClassProduct()) || check(pro.getInventory())) {
+				throw new BadRequestException("");
+			}
+			QProduct qProduct = QProduct.product;
+			Predicate predicate = qProduct.productId.eq(pro.getProductId());
+			Timestamp time = new Timestamp(System.currentTimeMillis());
+			Product product = productSer.getProductByQueryDsl(predicate);
+			productSer.updateByQueryDsl(pro.getProductId(), product);
+			pro.setCreateAt(product.getCreateAt());
+			pro.setModifiedAt(time);
+			LogUtil.info(LOG, "Request update a product with id by queryDsl:" + pro.getProductId());
+			return pro;
+		}
+		
+		@DeleteMapping(value = { "/queryDsl/delete/{productId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+				MediaType.APPLICATION_XML_VALUE })
+		@ResponseBody
+		public String deleteProductByQueryDsl(@PathVariable("productId") String productId, Principal principal) {
+			List<Sales> list = salesSer.findByProduct(productSer.get(UUID.fromString(productId)));
+			if (list.size() > 0) {
+				list.forEach(e -> salesSer.delete(e.getSalesId()));
+			}
+			productSer.deleteByQueryDsl(UUID.fromString(productId));
+			LogUtil.info(LOG, "Delete product with id :" + productId + ".");
+			return "Delete success PRODUCT{ " + productId + "}";
+		}
 	// Convert--
 	// Product to DTO
 	public ProductDTO convertProductToDTO(Product product) {

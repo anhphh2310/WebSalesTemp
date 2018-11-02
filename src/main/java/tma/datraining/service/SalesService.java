@@ -3,6 +3,8 @@ package tma.datraining.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.querydsl.core.types.Predicate;
+
 import tma.datraining.model.Location;
 import tma.datraining.model.Product;
 import tma.datraining.model.Sales;
@@ -15,25 +17,35 @@ public interface SalesService {
 	
 	List<CassSales> listCass();
 	
-	UUID save(Sales sale);
+	Sales save(Sales sale);
 	
-	UUID saveCass(CassSales sale);
+	CassSales saveCass(CassSales sale);
 	
 	Sales get(UUID id);
 	
 	CassSales getCass(UUID id);
 	
-	void update(UUID id, Sales sale);
+	Sales update(UUID id, Sales sale);
 	
-	void updateCass(UUID id, CassSales sales);
+	CassSales updateCass(UUID id, CassSales sales);
 	
-	void delete(UUID id);
+	UUID delete(UUID id);
 	
-	void deleteCass(UUID id);
+	UUID deleteCass(UUID id);
 	
 	List<Sales> findByProduct(Product product);
 
 	List<Sales> findByLocation(Location location);
 
 	List<Sales> findByTime(Time time);
+	
+	//QueryDsl
+	Sales getSaleByQueryDsl(Predicate predicate);
+	
+	List<Sales> getListSalesByQueryDsl(Predicate predicate);
+	
+	void updateByQueryDsl(UUID id, Sales sales);
+	
+	UUID deleteByQueryDsl(UUID id);
+	
 }

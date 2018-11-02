@@ -8,9 +8,10 @@ import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.querydsl.binding.QuerydslPredicate;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,11 +23,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.querydsl.core.types.Predicate;
+
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.LocationDTO;
 import tma.datraining.exception.BadRequestException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
+import tma.datraining.model.QLocation;
 import tma.datraining.model.Sales;
 import tma.datraining.model.cassandra.CassLocation;
 import tma.datraining.service.LocationService;
@@ -49,9 +53,9 @@ public class LocationController {
 
 	@Autowired
 	private DateTimeToTimestampConverter converter;
-	
+
 	private static final Logger LOG = LogManager.getLogger(LocationController.class);
-	
+
 	@GetMapping(value = "/convert", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<LocationDTO> getConvertLocations() {
@@ -82,7 +86,7 @@ public class LocationController {
 		list.forEach(e -> listResult.add(convertDTO(e)));
 		return listResult;
 	}
-	
+
 	@GetMapping(value = { "/country/{country}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
@@ -93,7 +97,7 @@ public class LocationController {
 		list.forEach(e -> listResult.add(convertDTO(e)));
 		return listResult;
 	}
-	
+
 	@GetMapping(value = { "/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
@@ -110,9 +114,7 @@ public class LocationController {
 
 	@PostMapping(value = { "/add" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public LocationDTO saveLocation(@RequestBody LocationDTO location,Principal principal) {
-		LogUtil.info(LOG, "Request add a new location.");
-		
+	public LocationDTO saveLocation(@RequestBody LocationDTO location, Principal principal) {
 		if (check(location.getCity()) || check(location.getCountry())) {
 			throw new BadRequestException("");
 		}
@@ -122,31 +124,25 @@ public class LocationController {
 		location.setModifiedAt(time);
 		Location loca = convertLocation(location);
 		locaSer.save(loca);
+		LogUtil.info(LOG, "Request add a new location: " + location.toString());
 		return location;
 	}
 
-	@PutMapping(value = { "/update" }, produces = { MediaType.APPLICATION_JSON_VALUE,
-			MediaType.APPLICATION_XML_VALUE })
+	@PutMapping(value = { "/update" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public LocationDTO updateLocation(@RequestBody LocationDTO location
-			) {
+	public LocationDTO updateLocation(@RequestBody LocationDTO location, Principal principal) {
 		LogUtil.info(LOG, "Request update Location with id: " + location.getLocationId() + ".");
-		
 		if (check(location.getCity()) || check(location.getCountry())) {
 			throw new BadRequestException("");
 		}
-
-		if (locaSer.get(location.getLocationId()) == null) {
+		Location loca = locaSer.get(location.getLocationId());
+		if (loca == null) {
 			throw new NotFoundDataException("Location Id");
 		}
-		location.setLocationId(location.getLocationId());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
-		location.setCreateAt(locaSer.get(location.getLocationId()).getCreateAt());
+		location.setCreateAt(loca.getCreateAt());
 		location.setModifiedAt(time);
-		Location loca = convertLocation(location);
-		Set<Sales> sales = new HashSet<>();
-		sales.addAll(salesSer.findByLocation(loca));
-		loca.setSales(sales);
+		loca = convertLocation(location);
 		locaSer.update(loca.getLocationId(), loca);
 		return location;
 	}
@@ -154,9 +150,8 @@ public class LocationController {
 	@DeleteMapping(value = { "/delete/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
-	public String deleteLocation(@PathVariable("locationId") String locationId,Principal principal) {
+	public String deleteLocation(@PathVariable("locationId") String locationId, Principal principal) {
 		LogUtil.info(LOG, "Request delete a location with id: " + locationId + ".");
-		
 		LocationDTO loca = null;
 		try {
 			loca = convertDTO(locaSer.get(UUID.fromString(locationId)));
@@ -166,6 +161,92 @@ public class LocationController {
 		salesSer.findByLocation(locaSer.get(UUID.fromString(locationId))).forEach(e -> salesSer.delete(e.getSalesId()));
 		locaSer.delete(loca.getLocationId());
 		return "Delete successfull LOCATION{ " + locationId + "}";
+	}
+
+	//
+	// QueryDsl
+	
+	@GetMapping(value = "/queryDsl/{id}", produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public LocationDTO getLocationByQueryDsl(@PathVariable("id") String id) {
+		LogUtil.info(LOG, "Request get location by queryDsl.");
+		QLocation qLocation = QLocation.location;
+		Predicate predicate;
+		try{ predicate = qLocation.locationId.eq(UUID.fromString(id));}
+		catch(IllegalArgumentException e) {
+			throw new NotFoundDataException("Locaiton id " + id + " ");
+		}
+		Location location = locaSer.getLocationByQueryDsl(predicate);
+		LocationDTO result = convertDTO(location);
+		return result;
+	}
+	
+	@GetMapping(value = "/list/queryDsl", produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<LocationDTO> getAllLocationsByQueryDsl(@QuerydslPredicate(root = Location.class) Predicate predicate) {
+		LogUtil.info(LOG, "Request list locations by queryDsl.");
+		List<Location> list = locaSer.getListLocationsByQueryDsl(predicate);
+		List<LocationDTO> result = new ArrayList<>();
+		list.forEach(e -> result.add(convertDTO(e)));
+		return result;
+	}
+
+	@GetMapping(value = "/list/queryDsl/country", produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<LocationDTO> getAllLocationsByQueryDslSortByCountry() {
+		LogUtil.info(LOG, "Request list locations by queryDsl.");
+		List<Location> list = locaSer.getListLocationsByQueryDslSortCountry();
+		List<LocationDTO> result = new ArrayList<>();
+		list.forEach(e -> result.add(convertDTO(e)));
+		return result;
+	}
+
+	@GetMapping(value = "/list/queryDsl/city", produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<LocationDTO> getAllLocationsByQueryDslSortByCity() {
+		LogUtil.info(LOG, "Request list locations by queryDsl.");
+		List<Location> list = locaSer.getListLocationsByQueryDslSortCity();
+		List<LocationDTO> result = new ArrayList<>();
+		list.forEach(e -> result.add(convertDTO(e)));
+		return result;
+	}
+
+	@PutMapping(value = "/queryDsl/update", produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public LocationDTO getUpdateLocationByQueryDsl(@RequestBody LocationDTO location) {
+		LogUtil.info(LOG, "Request update location by queryDsl.");
+		if (check(location.getCity()) || check(location.getCountry())) {
+			throw new BadRequestException("");
+		}
+		QLocation qLocation = QLocation.location;
+		Predicate predicate = qLocation.locationId.eq(location.getLocationId());
+		Location loca = locaSer.getLocationByQueryDsl(predicate);
+		if (loca == null) {
+			throw new NotFoundDataException("Location Id");
+		}
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		location.setCreateAt(loca.getCreateAt());
+		location.setModifiedAt(time);
+		loca = convertLocation(location);
+		Set<Sales> sales = new HashSet<>();
+		sales.addAll(salesSer.findByLocation(loca));
+		loca.setSales(sales);
+		locaSer.updateByQueryDsl(location.getLocationId(), loca);
+		return location;
+	}
+
+	@DeleteMapping(value = { "/queryDsl/delete/{locationId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public String deleteLocationByQueryDsl(@PathVariable("locationId") String locationId, Principal principal) {
+		LogUtil.info(LOG, "Request delete a location by queryDsl with id: " + locationId + ".");
+		locaSer.deleteByQueryDsl(UUID.fromString(locationId));
+		return "Delete successfull LOCATION by queryDSL{ " + locationId + "}";
 	}
 
 	//
@@ -205,10 +286,10 @@ public class LocationController {
 		location.setModifiedAt(converter.convert(loca.getModifiedAt()));
 		return location;
 	}
-	
-	//Check
+
+	// Check
 	public boolean check(String s) {
-		if(s !=null && !s.isEmpty() && !s.trim().isEmpty())
+		if (s != null && !s.isEmpty() && !s.trim().isEmpty())
 			return false;
 		return true;
 	}

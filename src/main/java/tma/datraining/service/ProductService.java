@@ -3,6 +3,8 @@ package tma.datraining.service;
 import java.util.List;
 import java.util.UUID;
 
+import com.querydsl.core.types.Predicate;
+
 import tma.datraining.model.Product;
 import tma.datraining.model.cassandra.CassProduct;
 
@@ -12,24 +14,37 @@ public interface ProductService {
 
 	List<CassProduct> listCass();
 	
-	UUID save(Product product);
+	Product save(Product product);
 
-	UUID saveCass(CassProduct product);
+	CassProduct saveCass(CassProduct product);
 	
 	Product get(UUID id);
 
 	CassProduct getCass(UUID id);
 	
-	void update(UUID id, Product product);
+	Product update(UUID id, Product product);
 	
-	void updateCass(UUID id, CassProduct product);
+	CassProduct updateCass(UUID id, CassProduct product);
 	
-	void delete(UUID id);
+	UUID delete(UUID id);
 	
-	void deleteCass(UUID id);
+	UUID deleteCass(UUID id);
 	
 	Product findByClassProduct(String classProduct);
 	
 	List<Product> findByInventory(String inventory);
+	
+	//QueryDsl
+	Product getProductByQueryDsl(Predicate predicate);
+	
+	List<Product> getProductsByQueryDsl(Predicate predicate);
+	
+	List<Product> getProductsByQueryDslSortClass();
+	
+	List<Product> getProductsByQueryDslSortInventory();
+
+	void updateByQueryDsl(UUID id, Product product);
+	
+	UUID deleteByQueryDsl(UUID id);
 	
 }

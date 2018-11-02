@@ -16,6 +16,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.junit4.SpringRunner;
 
@@ -24,7 +25,7 @@ import tma.datraining.repository.LocationRepository;
 
 @RunWith(SpringRunner.class)
 @TestPropertySource(locations = "classpath:application-test.properties")
-@SpringBootTest
+@SpringBootTest(webEnvironment = WebEnvironment.RANDOM_PORT)
 public class LocationRepositoryTest {
 
 	@Autowired
@@ -44,6 +45,7 @@ public class LocationRepositoryTest {
 		locationRepository.save(location2);
 	}
 	
+	@Ignore
 	@Test
 	public void testGetAllLocations() throws Exception{
 		Iterable<Location> results = locationRepository.findAll();
@@ -51,6 +53,7 @@ public class LocationRepositoryTest {
 		assertThat(((Collection<Location>)results).size()).isEqualTo(2);
 	}
 
+	@Ignore
 	@Test
 	public void testGetLocationById() throws Exception {
 		Location result = locationRepository.findByLocationId(id1);
@@ -58,18 +61,21 @@ public class LocationRepositoryTest {
 		assertThat(result.getCountry()).isEqualTo("VIETNAM");
 	}
 	
+	@Ignore
 	@Test
 	public void testGetLocationByWrongId() throws Exception{
 		Location result = locationRepository.findByLocationId(wrongId);
 		assertNull(result);
 	}
 	
+	@Ignore
 	@Test
 	public void testGetLocationByCity() throws Exception{
 		List<Location> results = locationRepository.findByCity("Ho Chi Minh City");
 		assertThat(results.size()).isEqualTo(1);
 	}
 	
+	@Ignore
 	@Test
 	public void testGetLocationByCountry() throws Exception{ 
 		List<Location> results = locationRepository.findByCountry("VIETNAM");
@@ -87,6 +93,7 @@ public class LocationRepositoryTest {
 		assertThat(result.getCity()).isEqualTo("Tokyo");
 	}
 	
+	@Ignore
 	@Test
 	public void testUpdateLocation() throws Exception{
 		Location location = new Location("VIETNAM", "HCM City", null, null);
@@ -98,7 +105,7 @@ public class LocationRepositoryTest {
 		assertEquals(((Collection<Location>)list).size(), 2);
 	}
 	
-	
+//	@Ignore
 	@Test
 	public void testDeleteLocationById() throws Exception{
 		locationRepository.deleteById(id1);

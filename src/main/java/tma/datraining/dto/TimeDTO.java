@@ -64,4 +64,11 @@ public class TimeDTO {
 		this.modifiedAt = modifiedAt;
 	}
 
+	@Override
+	public String toString() {
+		return "TimeDTO [timeId=" + timeId + ", month=" + month + ", quarter=" + quarter + ", year=" + year
+				+ ", createAt=" + createAt + ", modifiedAt=" + modifiedAt + "]";
+	}
+
+	
 }

@@ -2,13 +2,22 @@ package tma.datraining.service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
+
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.querydsl.core.types.Predicate;
+import com.querydsl.jpa.impl.JPAQuery;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+
 import tma.datraining.exception.NotFoundDataException;
+import tma.datraining.model.QTime;
 import tma.datraining.model.Time;
 import tma.datraining.model.cassandra.CassTime;
 import tma.datraining.repository.TimeRepository;
@@ -24,6 +33,9 @@ public class TimeServiceImp implements TimeService {
 	@Autowired
 	private CassTimeRepo cassRepo;
 
+	@PersistenceContext
+	private EntityManager entityManager;
+	
 	@Override
 	public List<Time> list() {
 		List<Time> list = new ArrayList<>();
@@ -32,9 +44,9 @@ public class TimeServiceImp implements TimeService {
 	}
 
 	@Override
-	public UUID save(Time time) {
+	public Time save(Time time) {
 		timeRepository.save(time);
-		return time.getTimeId();
+		return time;
 	}
 
 	@Override
@@ -46,14 +58,15 @@ public class TimeServiceImp implements TimeService {
 	}
 
 	@Override
-	public void update(UUID id, Time time) {
-		timeRepository.save(time);
+	public Time update(UUID id, Time time) {
+		return timeRepository.save(time);
+		
 	}
 
 	@Override
-	public void delete(UUID id) {
-		timeRepository.delete(timeRepository.findById(id).get());
-
+	public UUID delete(UUID id) {
+		timeRepository.delete(timeRepository.findByTimeId(id));
+		return id;
 	}
 
 	@Override
@@ -63,10 +76,10 @@ public class TimeServiceImp implements TimeService {
 	}
 
 	@Override
-	public UUID saveCass(CassTime time) {
+	public CassTime saveCass(CassTime time) {
 		// TODO Auto-generated method stub
 		cassRepo.save(time);
-		return time.getTimeId();
+		return time;
 	}
 
 	@Override
@@ -77,15 +90,16 @@ public class TimeServiceImp implements TimeService {
 	}
 
 	@Override
-	public void updateCass(UUID id, CassTime time) {
+	public CassTime updateCass(UUID id, CassTime time) {
 		// TODO Auto-generated method stub
-		cassRepo.save(time);
+		return cassRepo.save(time);
 	}
 
 	@Override
-	public void deleteCass(UUID id) {
+	public UUID deleteCass(UUID id) {
 		// TODO Auto-generated method stub
 		cassRepo.delete(cassRepo.findById(id).get());
+		return id;
 	}
 
 	@Override
@@ -102,8 +116,70 @@ public class TimeServiceImp implements TimeService {
 
 	@Override
 	public List<Time> findByQuarter(int quarter) {
-		List<Time> list = timeRepository.findByQuarter(quarter);
+		List<Time> result = timeRepository.findByQuarter(quarter);
+		return result;
+	}
+	
+	//QueryDSL
+	@Override
+	public Time getTimeByQueryDsl(Predicate predicate) {
+		Optional<Time> result = timeRepository.findOne(predicate);
+		if(result.isPresent() == false)
+			throw new NotFoundDataException("TimeId ");
+		return result.get();
+	}
+
+	@Override
+	public List<Time> getListTimeByQueryDsl(Predicate predicate) {
+		List<Time> list = new ArrayList<Time>();
+		timeRepository.findAll(predicate).forEach(e -> list.add(e));
 		return list;
+	}
+
+	@Override
+	public List<Time> getTimesByQueryDslSortingMonth() {
+		JPAQuery<Time> query = new JPAQuery<Time>(entityManager);
+		QTime qTime = QTime.time;
+		List<Time> result = query.from(qTime).orderBy(qTime.month.asc()).fetch();
+		return result;
+	}
+
+	@Override
+	public List<Time> getTimesByQueryDslSortingByQuarter() {
+		JPAQuery<Time> query = new JPAQuery<Time>(entityManager);
+		QTime qTime = QTime.time;
+		List<Time> result = query.from(qTime).orderBy(qTime.quarter.asc()).fetch();
+		return result;
+	}
+
+	@Override
+	public List<Time> getTimesByQueryDslSortingByYear() {
+		JPAQuery<Time> query = new JPAQuery<Time>(entityManager);
+		QTime qTime = QTime.time;
+		List<Time> result = query.from(qTime).orderBy(qTime.year.asc()).fetch();
+		return result;
+	}
+
+	@Override
+	public void updateByQueryDsl(UUID id, Time time) {
+		JPAQueryFactory query = new JPAQueryFactory(entityManager);
+		QTime qTime = QTime.time;
+		query.update(qTime).where(qTime.timeId.eq(id))
+		.set(qTime.month, time.getMonth())
+		.set(qTime.quarter,time.getQuarter())
+		.set(qTime.year, time.getYear())
+		.set(qTime.modifiedAt,time.getModifiedAt())
+		.set(qTime.createAt,time.getCreateAt())
+		.execute();
+		
+	}
+
+	@Override
+	public UUID deleteByQueryDsl(UUID id) {
+		JPAQueryFactory query = new JPAQueryFactory(entityManager);
+		QTime qTime = QTime.time;
+		query.delete(qTime).where(qTime.timeId.eq(id)).execute();
+		return id;
 	}
 
 }

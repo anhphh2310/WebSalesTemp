@@ -74,4 +74,11 @@ public class SalesDTO {
 		this.modifiedAt = modifiedAt;
 	}
 
+	@Override
+	public String toString() {
+		return "SalesDTO [salesId=" + salesId + ", product=" + product + ", time=" + time + ", location=" + location
+				+ ", dollars=" + dollars + ", createAt=" + createAt + ", modifiedAt=" + modifiedAt + "]";
+	}
+
+	
 }

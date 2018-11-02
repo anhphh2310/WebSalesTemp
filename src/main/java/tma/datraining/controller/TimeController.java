@@ -11,6 +11,7 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.querydsl.binding.QuerydslPredicate;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -22,10 +23,13 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.querydsl.core.types.Predicate;
+
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.TimeDTO;
 import tma.datraining.exception.BadRequestException;
 import tma.datraining.exception.NotFoundDataException;
+import tma.datraining.model.QTime;
 import tma.datraining.model.Sales;
 import tma.datraining.model.Time;
 import tma.datraining.model.cassandra.CassTime;
@@ -110,7 +114,6 @@ public class TimeController {
 	@ResponseBody
 	public TimeDTO saveTime(@RequestBody TimeDTO tim,Principal principal) {
 		LogUtil.info(LOG, "Request add a new time");
-		
 		if(tim.getMonth()<=0 || tim.getMonth()>12 ||tim.getQuarter()<=0 || tim.getQuarter()>4 || tim.getYear()<=0) {
 			throw new BadRequestException("");
 		}
@@ -129,15 +132,14 @@ public class TimeController {
 	@ResponseBody
 	public TimeDTO updateTime(@RequestBody TimeDTO tim, Principal principal) {
 		LogUtil.info(LOG, "Request update time with id: " + tim.getTimeId());
-		
-		if(timeSer.get(tim.getTimeId())==null) {
-			throw new NotFoundDataException("Time id");
+		Time time = timeSer.get(tim.getTimeId());
+		if(time==null) {
+			throw new NotFoundDataException("Time id " + tim.getTimeId());
 		}
 		if(tim.getMonth()<=0 || tim.getMonth()>12 ||tim.getQuarter()<=0 || tim.getQuarter()>4 || tim.getYear()<=0) {
 			throw new BadRequestException("");
 		}
 		Timestamp temp = new Timestamp(System.currentTimeMillis());
-		Time time = timeSer.get(tim.getTimeId());
 		time.setMonth(tim.getMonth());
 		time.setQuarter(tim.getQuarter());
 		time.setYear(tim.getYear());
@@ -146,8 +148,9 @@ public class TimeController {
 		sales.addAll(salesSer.findByTime(time));
 		time.setSales(sales);
 		timeSer.update(time.getTimeId(), time);
-		TimeDTO timeDTO = convertDTO(timeSer.get(time.getTimeId()));
-		return timeDTO;
+		tim.setCreateAt(time.getCreateAt());
+		tim.setModifiedAt(tim.getModifiedAt());
+		return tim;
 	}
 
 	@RequestMapping(value = { "/delete/{timeId}" }, method=RequestMethod.DELETE, produces = {
@@ -155,7 +158,6 @@ public class TimeController {
 	@ResponseBody
 	public String deleteTime(@PathVariable("timeId") String timeId, Principal principal) {
 		LogUtil.info(LOG, "Request delete time with id :" + timeId);
-		
 		TimeDTO time = null;
 		try {
 			time = convertDTO(timeSer.get(UUID.fromString(timeId)));
@@ -167,6 +169,83 @@ public class TimeController {
 		return "Delete success TIME{ " + timeId + "}";
 	}
 
+	//QueryDSL
+	//
+	@GetMapping(value = { "/list/queryDsl" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<TimeDTO> getTimesByQueryDsl(@QuerydslPredicate(root=Time.class) Predicate predicate) {
+		LogUtil.info(LOG, "Request list Time by queryDsl.");
+		List<TimeDTO> list = new ArrayList<>();
+		timeSer.getListTimeByQueryDsl(predicate).forEach(e->list.add(convertDTO(e)));
+		return list;
+	}
+	
+	@GetMapping(value = { "/list/queryDsl/month" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<TimeDTO> getTimesWithMonthByQueryDsl() {
+		LogUtil.info(LOG, "Request list Time by queryDsl.");
+		List<TimeDTO> list = new ArrayList<>();
+		timeSer.getTimesByQueryDslSortingMonth().forEach(e->list.add(convertDTO(e)));
+		return list;
+	}
+	
+	@GetMapping(value = { "/list/queryDsl/year" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<TimeDTO> getTimesWithYearByQueryDsl() {
+		LogUtil.info(LOG, "Request list Time by queryDsl.");
+		List<TimeDTO> list = new ArrayList<>();
+		timeSer.getTimesByQueryDslSortingByYear().forEach(e->list.add(convertDTO(e)));
+		return list;
+	}
+	
+	@GetMapping(value = { "/list/queryDsl/quarter" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<TimeDTO> getTimesWithQuarterByQueryDsl() {
+		LogUtil.info(LOG, "Request list Time by queryDsl.");
+		List<TimeDTO> list = new ArrayList<>();
+		timeSer.getTimesByQueryDslSortingByQuarter().forEach(e->list.add(convertDTO(e)));
+		return list;
+	}
+	
+	@PutMapping(value = { "/queryDsl/update" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public TimeDTO updateTimeByQueryDsl(@RequestBody TimeDTO tim, Principal principal) {
+		LogUtil.info(LOG, "Request update time with id: " + tim.getTimeId());
+		QTime qTime = QTime.time;
+		Predicate predicate = qTime.timeId.eq(tim.getTimeId());
+		Time time = timeSer.getTimeByQueryDsl(predicate);
+		if(time==null) {
+			throw new NotFoundDataException("Time id " + tim.getTimeId());
+		}
+		if(tim.getMonth()<=0 || tim.getMonth()>12 ||tim.getQuarter()<=0 || tim.getQuarter()>4 || tim.getYear()<=0) {
+			throw new BadRequestException("");
+		}
+		Timestamp temp = new Timestamp(System.currentTimeMillis());
+		time.setMonth(tim.getMonth());
+		time.setQuarter(tim.getQuarter());
+		time.setYear(tim.getYear());
+		time.setModifiedAt(temp);
+		timeSer.updateByQueryDsl(tim.getTimeId(), time);
+		tim.setCreateAt(time.getCreateAt());
+		tim.setModifiedAt(tim.getModifiedAt());
+		return tim;
+	}
+
+	@RequestMapping(value = { "/queryDsl/delete/{timeId}" }, method=RequestMethod.DELETE, produces = {
+			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public String deleteTimeByQueryDsl(@PathVariable("timeId") String timeId, Principal principal) {
+		LogUtil.info(LOG, "Request delete time with id :" + timeId);
+		salesSer.findByTime(timeSer.get(UUID.fromString(timeId))).forEach(e -> salesSer.delete(e.getSalesId()));
+		timeSer.delete(UUID.fromString(timeId));
+		return "Delete success TIME{ " + timeId + "}.";
+	}
+	
 	//Convert
 	//Time to DTO
 	public TimeDTO convertDTO(Time e) {

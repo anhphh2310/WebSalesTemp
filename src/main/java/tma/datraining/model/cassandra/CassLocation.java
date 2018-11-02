@@ -29,6 +29,9 @@ public class CassLocation {
 		this.modifiedAt = new DateTime(DateTimeZone.forID("Asia/Saigon"));
 	}
 
+	public CassLocation() {
+	}
+
 	@PrimaryKey(value="location_id")
 	@CassandraType(type=DataType.Name.UUID)
 	public UUID getLocationId() {

@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.querydsl.binding.QuerydslPredicate;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,12 +23,16 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.querydsl.core.types.Predicate;
+
 import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.SalesDTO;
+import tma.datraining.exception.ForbiddentException;
 import tma.datraining.exception.NotFoundDataException;
 import tma.datraining.model.Location;
 import tma.datraining.model.Product;
 import tma.datraining.model.Sales;
+import tma.datraining.model.QSales;
 import tma.datraining.model.Time;
 import tma.datraining.model.cassandra.CassSales;
 import tma.datraining.service.LocationService;
@@ -58,10 +63,10 @@ public class SalesController {
 
 	@Autowired
 	private DateTimeToTimestampConverter converter;
-	
+
 	private Logger LOG = LogManager.getLogger(SalesController.class);
 //	private static final Logger LOG = LoggerFactory.getLogger(SalesController.class);
-	
+
 	@GetMapping(value = "/convert", produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getConvert() {
@@ -95,7 +100,7 @@ public class SalesController {
 	@ResponseBody
 	public SalesDTO getSale(@PathVariable("saleId") String saleId) {
 		LogUtil.debug(LOG, "Request get sale with id: " + saleId + ".");
-		if(checkNullEmpty(saleId))
+		if (checkNullEmpty(saleId))
 			throw new NotFoundDataException("");
 		SalesDTO sales = null;
 		try {
@@ -112,7 +117,7 @@ public class SalesController {
 	@ResponseBody
 	public List<SalesDTO> getSaleByProduct(@PathVariable("productId") String productId) {
 		LogUtil.debug(LOG, "Request get sales by product with id: " + productId + ".");
-		if(checkNullEmpty(productId))
+		if (checkNullEmpty(productId))
 			throw new NotFoundDataException("");
 		Product pro = null;
 		try {
@@ -134,7 +139,7 @@ public class SalesController {
 	@ResponseBody
 	public List<SalesDTO> getSaleByLocation(@PathVariable("locationId") String locationId) {
 		LogUtil.debug(LOG, "Request convert data from Cassandra.");
-		if(checkNullEmpty(locationId))
+		if (checkNullEmpty(locationId))
 			throw new NotFoundDataException("");
 		Location location = null;
 		try {
@@ -155,7 +160,7 @@ public class SalesController {
 			MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public List<SalesDTO> getSaleByTime(@PathVariable("timeId") String timeId) {
-		if(checkNullEmpty(timeId))
+		if (checkNullEmpty(timeId))
 			throw new NotFoundDataException("");
 		Time time = null;
 		try {
@@ -174,7 +179,9 @@ public class SalesController {
 	@PostMapping(value = { "/add" }, produces = { MediaType.APPLICATION_JSON_VALUE, MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public SalesDTO saveSales(@RequestBody SalesDTO saleDTO, Principal principal) {
-		
+		if (principal == null) {
+			throw new ForbiddentException("Not login, ");
+		}
 		saleDTO.setSalesId(UUID.randomUUID());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		saleDTO.setCreateAt(time);
@@ -184,15 +191,13 @@ public class SalesController {
 		return saleDTO;
 	}
 
-	@PutMapping(value = { "/update}" }, produces = {MediaType.APPLICATION_JSON_VALUE,
+	@PutMapping(value = { "/update" }, produces = { MediaType.APPLICATION_JSON_VALUE,
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public SalesDTO updateSales(@RequestBody SalesDTO saleDTO, Principal principal) {
-		
 		if (salesSer.get(saleDTO.getSalesId()) == null) {
 			throw new NotFoundDataException("Sales Id ");
 		}
-		saleDTO.setSalesId(saleDTO.getSalesId());
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		saleDTO.setCreateAt(salesSer.get(saleDTO.getSalesId()).getCreateAt());
 		saleDTO.setModifiedAt(time);
@@ -205,8 +210,7 @@ public class SalesController {
 			MediaType.APPLICATION_XML_VALUE })
 	@ResponseBody
 	public String deleteSales(@PathVariable("saleId") String saleId, Principal principal) {
-		
-		if(checkNullEmpty(saleId))
+		if (checkNullEmpty(saleId))
 			throw new NotFoundDataException("");
 		SalesDTO sales = null;
 		try {
@@ -217,10 +221,73 @@ public class SalesController {
 		salesSer.delete(sales.getSalesId());
 		return "Delete successful SALES{ " + saleId + "}";
 	}
-	
-	//Check null empty
+
+	// QueryDsl
+	//
+	@GetMapping(value = { "/list/queryDsl" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public List<SalesDTO> getSalesByQueryDsl(@QuerydslPredicate(root = Sales.class) Predicate predicate) {
+		List<SalesDTO> list = new ArrayList<>();
+		salesSer.getListSalesByQueryDsl(predicate).forEach(e -> list.add(convertDTO(e)));
+		LogUtil.debug(LOG, "Request list sales by queryDsl.");
+		return list;
+	}
+
+	@GetMapping(value = { "/queryDsl/{id}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public SalesDTO getSaleByQueryDsl(@PathVariable("id") String id) {
+		QSales qSales = QSales.sales;
+		Predicate predicate;
+		try {
+			predicate = qSales.salesId.eq(UUID.fromString(id));
+		} catch (IllegalArgumentException e) {
+			throw new NotFoundDataException("Sales id ");
+		}
+		Sales sales = salesSer.getSaleByQueryDsl(predicate);
+		SalesDTO result = convertDTO(sales);
+		LogUtil.debug(LOG, "Request sale by queryDsl.");
+		return result;
+	}
+
+	@PutMapping(value = { "/queryDsl/update" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public SalesDTO updateSalesByQueryDsl(@RequestBody SalesDTO saleDTO, Principal principal) {
+		if (salesSer.get(saleDTO.getSalesId()) == null) {
+			throw new NotFoundDataException("Sales Id ");
+		}
+		QSales qSales = QSales.sales;
+		Predicate predicate = qSales.salesId.eq(saleDTO.getSalesId());
+		Timestamp time = new Timestamp(System.currentTimeMillis());
+		Sales sales = salesSer.getSaleByQueryDsl(predicate);
+		sales.setDollars(saleDTO.getDollars());
+		sales.setProduct(proSer.get(saleDTO.getProduct()));
+		sales.setLocation(locaSer.get(saleDTO.getLocation()));
+		sales.setTime(timeSer.get(saleDTO.getTime()));
+		sales.setModifiedAt(time);
+		salesSer.updateByQueryDsl(saleDTO.getSalesId(), sales);
+		saleDTO = convertDTO(sales);
+		LogUtil.debug(LOG, "Request update sale by queryDsl.");
+		return saleDTO;
+	}
+
+	@DeleteMapping(value = { "/queryDsl/delete/{saleId}" }, produces = { MediaType.APPLICATION_JSON_VALUE,
+			MediaType.APPLICATION_XML_VALUE })
+	@ResponseBody
+	public String deleteSalesByQueryDsl(@PathVariable("saleId") String saleId, Principal principal) {
+		try {
+			salesSer.deleteByQueryDsl(UUID.fromString(saleId));
+		} catch (IllegalArgumentException e) {
+			throw new NotFoundDataException("Sales id " + saleId + " ");
+		}
+		return "Delete successful SALES by queryDsl{ " + saleId + "}";
+	}
+
+	// Check null empty
 	public boolean checkNullEmpty(String s) {
-		if(s != null && !s.isEmpty() && !s.trim().isEmpty())
+		if (s != null && !s.isEmpty() && !s.trim().isEmpty())
 			return false;
 		return true;
 	}
