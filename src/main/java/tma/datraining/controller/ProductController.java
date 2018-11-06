@@ -33,7 +33,6 @@ import tma.datraining.converter.DateTimeToTimestampConverter;
 import tma.datraining.dto.ProductDTO;
 import tma.datraining.exception.BadRequestException;
 import tma.datraining.exception.NotFoundDataException;
-import tma.datraining.model.Location;
 import tma.datraining.model.Product;
 import tma.datraining.model.QProduct;
 import tma.datraining.model.Sales;

@@ -220,14 +220,14 @@ public class LocationController {
 	@ResponseBody
 	public LocationDTO getUpdateLocationByQueryDsl(@RequestBody LocationDTO location) {
 		LogUtil.info(LOG, "Request update location by queryDsl.");
-		if (check(location.getCity()) || check(location.getCountry())) {
-			throw new BadRequestException("");
-		}
 		QLocation qLocation = QLocation.location;
 		Predicate predicate = qLocation.locationId.eq(location.getLocationId());
 		Location loca = locaSer.getLocationByQueryDsl(predicate);
 		if (loca == null) {
 			throw new NotFoundDataException("Location Id");
+		}
+		if (check(location.getCity()) || check(location.getCountry())) {
+			throw new BadRequestException("");
 		}
 		Timestamp time = new Timestamp(System.currentTimeMillis());
 		location.setCreateAt(loca.getCreateAt());
@@ -245,6 +245,7 @@ public class LocationController {
 	@ResponseBody
 	public String deleteLocationByQueryDsl(@PathVariable("locationId") String locationId, Principal principal) {
 		LogUtil.info(LOG, "Request delete a location by queryDsl with id: " + locationId + ".");
+		salesSer.findByLocation(locaSer.get(UUID.fromString(locationId))).forEach(e -> salesSer.delete(e.getSalesId()));
 		locaSer.deleteByQueryDsl(UUID.fromString(locationId));
 		return "Delete successfull LOCATION by queryDSL{ " + locationId + "}";
 	}

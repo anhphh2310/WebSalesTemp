@@ -63,8 +63,6 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
 	    .antMatchers("/location/add","/sales/add","/time/add","/product/add","/location/update","/sales/update","/time/update","/product/update",
 	    		"/location/delete/*","/sales/delete/*","/time/delete/*","/product/delete/*")
 	    .access("hasRole('ROLE_ADMIN')");
-		
-		
 	}
 
 	@Bean

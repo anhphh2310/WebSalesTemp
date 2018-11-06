@@ -28,7 +28,6 @@ import tma.datraining.repository.LocationRepository;
 import tma.datraining.service.LocationServiceImp;
 
 @RunWith(SpringRunner.class)
-@TestPropertySource(locations = "classpath:application-test.properties")
 @SpringBootTest
 public class LocationServiceImpTest {
 
@@ -47,7 +46,7 @@ public class LocationServiceImpTest {
 		MockitoAnnotations.initMocks(this);
 	}
 	
-	@Ignore
+
 	@Test
 	public void testGetAllLocations() throws Exception {
 		List<Location> list = new ArrayList<>();
@@ -65,7 +64,7 @@ public class LocationServiceImpTest {
 		assertEquals(2, list2.size());
 	}
 
-	@Ignore
+
 	@Test
 	public void testGetLocationById() throws Exception {
 		Location location1 = new Location();
@@ -78,7 +77,7 @@ public class LocationServiceImpTest {
 		assertEquals("Ho Chi Minh City", location2.getCity());
 	}
 	
-	@Ignore
+
 	@Test
 	public void testGetLocationsByCity() throws Exception{
 		List<Location> list = new ArrayList<>();
@@ -94,7 +93,7 @@ public class LocationServiceImpTest {
 		
 	}
 	
-	@Ignore
+
 	@Test
 	public void testGetLocationsByCountry() throws Exception{
 		List<Location> list = new ArrayList<>();
@@ -109,7 +108,7 @@ public class LocationServiceImpTest {
 		assertEquals("Ho Chi Minh City", list.get(0).getCity());
 	}
 	
-	@Ignore
+
 	@Test
 	public void testAddLocation() throws Exception{
 		Location location1 = new Location();
@@ -122,7 +121,7 @@ public class LocationServiceImpTest {
 		assertEquals(result.getLocationId(), id3);
 	}
 	
-	@Ignore
+
 	@Test
 	public void testUpdateLocation() throws Exception{
 		Location location1 = new Location();
@@ -135,7 +134,7 @@ public class LocationServiceImpTest {
 		assertEquals(result.getCity(), location1.getCity());
 	}
 
-//	@Ignore
+
 	@Test
 	public void testDeleteLocation() throws Exception{
 		Location location1 = new Location();

@@ -10,11 +10,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.security.Principal;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import org.springframework.web.context.WebApplicationContext;
 
 import tma.datraining.controller.ProductController;
+import tma.datraining.dto.ProductDTO;
 import tma.datraining.model.Product;
 
 @RunWith(SpringRunner.class)
@@ -59,7 +61,7 @@ public class ProductControllerIntegrationTest {
 		productController.getProducts().forEach(e -> id1 = e.getProductId());
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void testGetAllProducts() throws Exception {
 		mock.perform(get("/product/list").contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk())
@@ -67,14 +69,14 @@ public class ProductControllerIntegrationTest {
 				.andDo(print());
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void testGetLocationById() throws Exception {
 		mock.perform(get("/product/{id1}", id1).contentType(MediaType.APPLICATION_JSON)).andExpect(status().isOk());
 
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void testGetProductByClassProduct() throws Exception {
 		String classPro = "USB";
@@ -82,7 +84,7 @@ public class ProductControllerIntegrationTest {
 				.andExpect(status().isOk());
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void testGetProductByInventory() throws Exception {
 		String inventory = "Inv-12";
@@ -91,7 +93,7 @@ public class ProductControllerIntegrationTest {
 
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void testAddProduct() throws Exception {
 		Timestamp time = new Timestamp(System.currentTimeMillis());
@@ -101,7 +103,7 @@ public class ProductControllerIntegrationTest {
 				.andExpect(status().isOk()).andExpect(jsonPath("$.classProduct", is("USB"))).andDo(print());
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void tesUpdateProduct() throws Exception {
 		Product product = new Product(155, "USB-type c", "Inv-102", null, null);
@@ -111,7 +113,7 @@ public class ProductControllerIntegrationTest {
 
 	}
 
-	@Ignore
+//	@Ignore
 	@Test
 	public void tesDeleteProduct() throws Exception {
 		mock.perform(delete("/product/delete/{id1}", id1)).andExpect(status().isOk()).andDo(print());

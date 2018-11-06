@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog
+	xmlns="http://www.liquibase.org/xml/ns/dbchangelog"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext"
+	xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-3.0.xsd
+        http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd">
+
+	<property name="uuid_function" value="uuid_generate_v4()"
+		dbms="postgresql" />
+
+	<changeSet id="1" author="phhanh">
+		<createTable tableName="product">
+			<column name="product_id" type="uuid">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="item" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="class" type="varchar(256)">
+				<constraints nullable="false" />
+			</column>
+			<column name="inventory" type="varchar(256)">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_at" type="timestamp with time zone">
+				<constraints nullable="false" />
+			</column>
+			<column name="modified_at" type="timestamp with time zone">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<createTable tableName="location">
+			<column name="location_id" type="uuid">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="country" type="varchar(256)">
+				<constraints nullable="false" />
+			</column>
+			<column name="city" type="varchar(256)">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_at" type="timestamp with time zone">
+				<constraints nullable="false" />
+			</column>
+			<column name="modified_at" type="timestamp with time zone">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<createTable tableName="time">
+			<column name="time_id" type="uuid">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="month" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="quarter" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="year" type="int">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_at" type="timestamp with time zone">
+				<constraints nullable="false" />
+			</column>
+			<column name="modified_at" type="timestamp with time zone">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<createTable tableName="sales">
+			<column name="product_id" type="uuid">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="time_id" type="uuid">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="location_id" type="uuid">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="dollars" type="money">
+				<constraints nullable="false" />
+			</column>
+			<column name="created_at" type="timestamp with time zone">
+				<constraints nullable="false" />
+			</column>
+			<column name="modified_at" type="timestamp with time zone">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<addForeignKeyConstraint
+			baseColumnNames="product_id" baseTableName="sales"
+			constraintName="fk_sales_product" deferrable="true"
+			initiallyDeferred="true" referencedColumnNames="product_id"
+			referencedTableName="product" />
+		<addForeignKeyConstraint
+			baseColumnNames="time_id" baseTableName="sales"
+			constraintName="fk_sales_time" deferrable="true"
+			initiallyDeferred="true" referencedColumnNames="time_id"
+			referencedTableName="time" />
+		<addForeignKeyConstraint
+			baseColumnNames="location_id" baseTableName="sales"
+			constraintName="fk_sales_location" deferrable="true"
+			initiallyDeferred="true" referencedColumnNames="location_id"
+			referencedTableName="location" />
+	</changeSet>
+	
+	<!--Spring security-->
+	<changeSet id="2" author="phhanh">
+		<createTable tableName="App_User">
+			<column name="User_Id" type="bigint">
+				<constraints primaryKey="true" nullable="false"
+					unique="true" />
+			</column>
+			<column name="User_Name" type="VARCHAR(36)">
+				<constraints nullable="false" />
+			</column>
+			<column name="ecryptedPassword" type="varchar(128)">
+				<constraints nullable="false" />
+			</column>
+			<column name="Enabled" type="int">
+				<constraints nullable="false" />
+			</column>
+		</createTable>
+		<createTable tableName="App_Role">
+			<column name="Role_Id" type="bigint">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="Role_Name" type="VARCHAR(30)">
+				<constraints nullable="false" unique="true" />
+			</column>
+		</createTable>
+		<createTable tableName="User_Role">
+			<column name="Id" type="bigint">
+				<constraints primaryKey="true" nullable="false" />
+			</column>
+			<column name="User_Id" type="bigint">
+				<constraints nullable="false" unique="true" />
+			</column>
+			<column name="Role_Id" type="bigint">
+				<constraints nullable="false" unique="true" />
+			</column>
+		</createTable>
+
+		<addForeignKeyConstraint
+			baseColumnNames="User_Id" baseTableName="User_Role"
+			constraintName="USER_ROLE_FK1" deferrable="true"
+			initiallyDeferred="true" referencedColumnNames="User_Id"
+			referencedTableName="App_User" />
+		<addForeignKeyConstraint
+			baseColumnNames="Role_Id" baseTableName="User_Role"
+			constraintName="USER_ROLE_FK2" deferrable="true"
+			initiallyDeferred="true" referencedColumnNames="Role_Id"
+			referencedTableName="App_Role" />
+	</changeSet>
+</databaseChangeLog>

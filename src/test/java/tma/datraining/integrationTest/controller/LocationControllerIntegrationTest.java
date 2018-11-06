@@ -57,7 +57,7 @@ public class LocationControllerIntegrationTest {
 		mock.perform(post("/location/add").contentType(MediaType.APPLICATION_JSON).content(createLocationJsonForAdd(location1)));
 		locationControlller.getAllLocations().forEach(e -> id1 = e.getLocationId());
 	}
-	@Ignore
+//	@Ignore
 	@Test
 	public void testGetAllLocations() throws Exception {
 		mock.perform(get("/location/list").contentType(MediaType.APPLICATION_JSON))
